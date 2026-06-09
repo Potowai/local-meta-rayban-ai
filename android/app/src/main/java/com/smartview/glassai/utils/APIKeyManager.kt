@@ -18,7 +18,7 @@ class APIKeyManager(context: Context) {
 
     companion object {
         private const val TAG = "APIKeyManager"
-        private const val PREFS_NAME = "turbometa_secure_prefs"
+        private const val PREFS_NAME = "localmeta_secure_prefs"
 
         // Account names for different providers
         private const val KEY_ALIBABA_BEIJING = "alibaba-beijing-api-key"

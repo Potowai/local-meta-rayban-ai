@@ -583,7 +583,7 @@ class APIProviderManager private constructor(context: Context) {
                 val request = Request.Builder()
                     .url("https://openrouter.ai/api/v1/models")
                     .addHeader("Authorization", "Bearer $apiKey")
-                    .addHeader("X-Title", "TurboMeta")
+                    .addHeader("X-Title", "LocalMeta")
                     .get()
                     .build()
 

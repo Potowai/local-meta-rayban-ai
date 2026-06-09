@@ -445,9 +445,9 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Code,
                     title = stringResource(R.string.github_project),
-                    subtitle = "turbometa-rayban-ai",
+                    subtitle = "local-meta-rayban-ai",
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Turbo1123/turbometa-rayban-ai"))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Potowai/local-meta-rayban-ai"))
                         context.startActivity(intent)
                     }
                 )
@@ -459,7 +459,7 @@ fun SettingsScreen(
                     title = stringResource(R.string.download_latest),
                     subtitle = stringResource(R.string.download_latest_desc),
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Turbo1123/turbometa-rayban-ai/releases"))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Potowai/local-meta-rayban-ai/releases"))
                         context.startActivity(intent)
                     }
                 )

@@ -17,8 +17,8 @@ import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.smartview.glassai.managers.LanguageManager
-import com.smartview.glassai.ui.navigation.TurboMetaNavigation
-import com.smartview.glassai.ui.theme.TurboMetaTheme
+import com.smartview.glassai.ui.navigation.LocalMetaNavigation
+import com.smartview.glassai.ui.theme.LocalMetaTheme
 import com.smartview.glassai.viewmodels.WearablesViewModel
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellableContinuation
@@ -87,12 +87,12 @@ class MainActivity : AppCompatActivity() {
         checkAndRequestPermissions()
 
         setContent {
-            TurboMetaTheme {
+            LocalMetaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TurboMetaNavigation(
+                    LocalMetaNavigation(
                         wearablesViewModel = wearablesViewModel,
                         onRequestWearablesPermission = ::requestWearablesPermission
                     )

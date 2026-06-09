@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TurboMeta</string>
+    <string name="app_name">LocalMeta</string>
 
     <!-- Navigation / Tabs -->
     <string name="home">Home</string>
@@ -14,7 +14,7 @@
     <string name="vision_recognition">Vision</string>
 
     <!-- Home Screen -->
-    <string name="home_welcome">Welcome to TurboMeta</string>
+    <string name="home_welcome">Welcome to LocalMeta</string>
     <string name="home_subtitle">Your AI Assistant for Ray-Ban Meta</string>
     <string name="home_connect_glasses">Connect Ray-Ban Meta</string>
     <string name="features">Features</string>
@@ -192,7 +192,7 @@
     <string name="about">About</string>
     <string name="version">Version</string>
     <string name="github_project">GitHub Project</string>
-    <string name="github_project_url">https://github.com/Turbo1123/turbometa-rayban-ai</string>
+    <string name="github_project_url">https://github.com/Potowai/local-meta-rayban-ai</string>
     <string name="download_latest">Download Latest Version</string>
     <string name="download_latest_desc">Get the latest release from GitHub</string>
     <string name="support_development">Support Development</string>

@@ -1,152 +1,149 @@
-# TurboMeta - RayBan Meta 智能眼镜 AI 助手
+# LocalMeta - RayBan Meta Smart Glasses AI Assistant
 
 <div align="center">
 
-<img src="./rayban.png" width="120" alt="TurboMeta Logo"/>
+<img src="./rayban.png" width="120" alt="LocalMeta Logo"/>
 
-**🌏 全球首个支持全中文AI的全模态 RayBan Meta 助手**
+**🌏 World's First Full-Chinese AI Multimodal RayBan Meta Assistant**
 
 [![iOS](https://img.shields.io/badge/iOS-17.0%2B-blue.svg)](https://www.apple.com/ios/)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green.svg)](https://www.android.com/)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple.svg)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![请我喝咖啡](https://img.shields.io/badge/请我喝咖啡-☕-yellow?style=flat-square)](#-请我喝杯咖啡)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/turbo1123)
 
-**🇺🇸 [English Version / README in English](./README_EN.md)** | 简体中文
+[English](./README.md)
 
 </div>
 
 ---
 
-> **声明**：本项目为开源项目，仅提供源代码供开发者学习和研究。本项目**不提供任何预编译安装包下载**，不提供任何绕过官方应用商店的安装方式，也不会回答任何与非官方分发、侧载安装相关的问题。iOS 用户请通过 Xcode 按照 Apple 标准开发流程在个人设备上编译运行。本项目严格遵守 [Apple Developer Program License Agreement](https://developer.apple.com/support/terms/) 的所有条款。
-
-> 🌍 **For English speakers**: Please check [**README_EN.md**](./README_EN.md) for the English version of this documentation.
+> **Disclaimer**: This is an open-source project providing source code only for developers to learn and study. We do **NOT** provide any pre-built binaries for download, do NOT support any method of bypassing official app store distribution, and will NOT respond to any inquiries related to unofficial distribution or sideloading. iOS users should build the project using Xcode following standard Apple development workflows. This project strictly complies with all terms of the [Apple Developer Program License Agreement](https://developer.apple.com/support/terms/).
 
 ---
 
-## 🎉 重磅更新 v2.0.0
+## 🎉 Major Update v2.0.0
 
 <div align="center">
 
-### 🔗 OpenClaw 集成 + Meta Ray-Ban Display 支持
+### 🔗 OpenClaw Integration + Meta Ray-Ban Display Support
 
-**语音对话、拍照识别、OpenClaw AI 助手 - 你的眼镜，连接一切！**
+**Voice chat, photo recognition, OpenClaw AI assistant — your glasses, connected to everything!**
 
 ✅ **iOS v2.0.0** | 📱 **Android v1.5.0**
 
-☕ **喜欢这个项目？** [**请我喝杯咖啡**](#-请我喝杯咖啡) 支持开发！
+☕ **Enjoying this project?** [**Buy me a coffee**](https://buymeacoffee.com/turbo1123) to support development!
 
 </div>
 
-### 🆕 v2.0 新功能
+### 🆕 v2.0 New Features
 
-- 🔗 **OpenClaw 集成**：将眼镜连接到 [OpenClaw](https://openclaw.ai) AI 助手，支持拍照发送、语音转录对话 👉 [使用教程](#-openclaw-集成)
-- 🕶️ **Meta Ray-Ban Display 支持**：新增对 Meta Ray-Ban Display 机型的支持（DAT SDK v0.5.0）
-- 🎙️ **阿里云实时语音识别**：OpenClaw 聊天支持 Fun-ASR 语音转文字
-- 🛡️ **稳定性提升**：修复多个内存泄漏和线程安全问题
+- 🔗 **OpenClaw Integration**: Connect your glasses to [OpenClaw](https://openclaw.ai) AI assistant — snap photos & voice chat 👉 [Setup Guide](#-openclaw-integration)
+- 🕶️ **Meta Ray-Ban Display Support**: Added support for Meta Ray-Ban Display glasses (DAT SDK v0.5.0)
+- 🎙️ **Real-time Speech Recognition**: OpenClaw chat supports Alibaba Fun-ASR voice-to-text
+- 🛡️ **Stability Improvements**: Fixed memory leaks and thread safety issues
 
-### 🎯 核心功能
+### 🎯 Core Features
 
-- 🔗 **OpenClaw AI 助手**：连接 OpenClaw Gateway，通过眼镜拍照与 AI 对话 👉 [查看配置教程](#-openclaw-集成)
-- 🎬 **RTMP 直播推流**：支持推流到任意 RTMP 平台，YouTube、Twitch、B站、抖音、TikTok、Facebook Live 等
-- 👁️ **Quick Vision 快速识图**：Siri 语音唤醒，无需解锁手机即可识别眼前物体
-- 🤖 **Live AI 实时对话**：通过眼镜摄像头和麦克风进行多模态实时 AI 对话
-- 🍽️ **LeanEat 营养分析**：拍照即可获得食物营养成分和健康评分
-- 🌐 **实时翻译**：18 种语言互译
+- 🔗 **OpenClaw AI Assistant**: Connect to OpenClaw Gateway, chat with AI using glasses photos 👉 [Setup Guide](#-openclaw-integration)
+- 🎬 **RTMP Live Streaming**: Stream to any RTMP platform — YouTube, Twitch, Bilibili, Douyin, TikTok, Facebook Live, etc.
+- 👁️ **Quick Vision**: Siri voice activation - identify objects without unlocking your phone
+- 🤖 **Live AI**: Real-time multimodal AI conversation via glasses camera and microphone
+- 🍽️ **LeanEat**: Take a photo to get nutrition analysis and health scores
 
-### 🌐 多语言 & 多平台
+### 🌐 Multi-Language & Multi-Platform
 
-- 🌐 **中英文双语界面**：App 界面完整支持中文和英文切换
-- 🔌 **OpenRouter 支持**：接入 500+ AI 模型，包括 GPT-5、Claude 4.5、Gemini 3 等
-- 🎙️ **Google Gemini Live**：Live AI 支持 Google Gemini 实时语音对话（需海外网络）
-- 🌏 **阿里云多区域**：支持北京（中国大陆）和新加坡（国际）两个服务区域
-- 🔑 **独立 API Key 管理**：不同服务商和区域的 API Key 独立管理
+- 🌐 **Bilingual Interface**: Full English and Chinese UI support with easy switching
+- 🔌 **OpenRouter Support**: Access 500+ AI models including GPT-5, Claude 4.5, Gemini 3, and more
+- 🎙️ **Google Gemini Live**: Live AI now supports Google Gemini real-time voice chat (requires non-China network)
+- 🌏 **Alibaba Multi-Region**: Support for Beijing (China mainland) and Singapore (International) endpoints
+- 🔑 **Independent API Key Management**: Separate API keys for different providers and regions
 
 ---
 
-## 📱 Quick Vision 快速识图
+## 📱 Quick Vision
 
 <div align="center">
 
-### 🚀 支持后台唤醒 + Siri 语音触发！
+### 🚀 Background Wake-up + Siri Voice Trigger!
 
-**无需解锁手机，一句话即可让 AI 识别眼前的一切**
+**No need to unlock your phone - just say a word and let AI identify everything in front of you**
 
 </div>
 
-由于 Meta DAT SDK 的限制，App 无法在后台直接访问眼镜摄像头。我们创新性地结合了 **Siri 快捷指令 + App Intent + 阿里云 TTS** 实现了这一功能：
+Due to Meta DAT SDK limitations, the app cannot directly access the glasses camera in the background. We innovatively combined **Siri Shortcuts + App Intent + Alibaba Cloud TTS** to achieve this feature:
 
-- 📱 **Siri 语音唤醒**：对着 iPhone 说"嘿 Siri，TurboMeta 快速识图"
-- ⌚ **操作按钮触发**（iPhone 15 Pro+）：一键触发快速识图
-- 🔊 **语音播报结果**：使用阿里云 qwen3-tts-flash 高品质语音播报
-- 🎯 **全自动流程**：启动流 → 拍照 → 停止流 → AI 识别 → TTS 播报
+- 📱 **Siri Voice Wake-up**: Just say "Hey Siri, LocalMeta Quick Vision"
+- ⌚ **Action Button Trigger** (iPhone 15 Pro+): One-tap Quick Vision
+- 🔊 **Voice Result Announcement**: High-quality TTS powered by qwen3-tts-flash
+- 🎯 **Fully Automated**: Start stream → Capture → Stop stream → AI Recognition → TTS Announcement
 
-👉 [查看详细使用教程](#quick-vision-tutorial)
+👉 [View Detailed Tutorial](#quick-vision-tutorial)
 
 ---
 
-## 🎨 界面预览
+## 🎨 Interface Preview
 
 <table>
   <tr>
-    <td align="center"><b>首页</b></td>
-    <td align="center"><b>对话记录</b></td>
-    <td align="center"><b>拍摄页面</b></td>
-    <td align="center"><b>设置页面</b></td>
+    <td align="center"><b>Home</b></td>
+    <td align="center"><b>Live AI</b></td>
+    <td align="center"><b>Camera</b></td>
+    <td align="center"><b>Settings</b></td>
   </tr>
   <tr>
-    <td><img src="./screenshots/首页.jpg" width="180"/></td>
-    <td><img src="./screenshots/对话记录.jpg" width="180"/></td>
+    <td><img src="./screenshots/home.jpg" width="180"/></td>
+    <td><img src="./screenshots/live-ai.jpg" width="180"/></td>
     <td><img src="./screenshots/camera.jpg" width="180"/></td>
-    <td><img src="./screenshots/设置页面.jpg" width="180"/></td>
+    <td><img src="./screenshots/settings.jpg" width="180"/></td>
   </tr>
 </table>
 
-## 🎬 视频演示
+## 🎬 Video Demo
 
 <a href="https://www.bilibili.com/video/BV1aTqSBHEqN" target="_blank">
-  <img src="https://img.shields.io/badge/Bilibili-演示视频-00A1D6?style=for-the-badge&logo=bilibili" alt="视频演示"/>
+  <img src="https://img.shields.io/badge/Bilibili-Demo-00A1D6?style=for-the-badge&logo=bilibili" alt="Video Demo"/>
 </a>
 
-👉 <a href="https://www.bilibili.com/video/BV1aTqSBHEqN" target="_blank">在 Bilibili 观看</a>
+👉 <a href="https://www.bilibili.com/video/BV1aTqSBHEqN" target="_blank">Watch on Bilibili</a>
 
-> 💡 如果这个项目对你有帮助，欢迎[请我喝杯咖啡](#-请我喝杯咖啡) ☕
+> 💡 If you find this project helpful, consider [**buying me a coffee**](https://buymeacoffee.com/turbo1123) ☕
 
-## 📥 获取源码
+## 📥 Get the Source Code
 
-> ⚠️ **声明**：本项目为开源项目，iOS 端仅提供源代码，用户需通过 Xcode 按照 Apple 标准开发流程在个人设备上编译运行。Android 用户可在 Releases 页面下载 APK。
+> ⚠️ **Note**: This is an open-source project. The iOS version provides source code only — users should build the project using Xcode following standard Apple development workflows. Android users can download the APK from the Releases page.
 
-### ⚠️ 重要：请先开启 Meta View App 的 DAT SDK 预览模式！
+### ⚠️ Important: Enable Meta DAT SDK Preview Mode First!
 
-使用 TurboMeta 前，**必须**在 Meta View App 中开启 DAT SDK 预览模式（此功能与 iOS 系统的开发者模式无关）：
+Before using LocalMeta, you **MUST** enable DAT SDK Preview Mode in Meta View App (this is unrelated to iOS Developer Mode):
 
-1. **将 RayBan Meta 眼镜固件更新到 20 版本以上**（DAT SDK 需要）
-2. **将 Meta View App 更新到最新版本**
-3. 打开手机上的 **Meta View App**（或 **Meta AI App**）
-4. 进入 **设置** → **应用信息**
-5. 找到 **版本号**
-6. **快速连续点击版本号 5 次**
-7. 会出现提示信息
+1. **Update RayBan Meta glasses firmware to version 20+** (required for DAT SDK)
+2. **Update Meta View App to the latest version**
+3. Open **Meta View App** (or **Meta AI App**) on your phone
+4. Go to **Settings** → **App Info**
+5. Find **Version Number**
+6. **Tap the version number 5 times rapidly**
+7. A confirmation message will appear
 
-> 不开启此模式，跳转 Meta View App 时会提示异常。此操作是 Meta Wearables DAT SDK 的要求，详见 Meta 官方文档。
+> This is required by Meta Wearables DAT SDK (currently in Preview). See Meta's official documentation for details.
 
 ---
 
-### 🍎 iOS — 从源码编译
+### 🍎 iOS — Build from Source
 
-> ✅ 支持中英文、OpenRouter、Gemini、RTMP 直播推流、OpenClaw 等功能
+> ✅ Supports bilingual UI, OpenRouter, Gemini, RTMP streaming, OpenClaw integration
 >
-> ⚠️ **本项目不提供预编译安装包（IPA）下载**，仅提供源码。请使用 Xcode 在个人设备上编译运行。
+> ⚠️ **We do NOT provide pre-built binaries (IPA) for download.** Please build from source using Xcode.
 
-#### 步骤 1：注册 Meta Wearables 开发者
+#### Step 1: Register with Meta Wearables
 
-1. 前往 [Meta Wearables Developer Center](https://wearables.developer.meta.com/)
-2. 注册并登录
-3. 点击 **Projects** → **Create Project**，创建一个新项目
-4. 进入项目的 **App configuration** 页面
-5. 在 **Application ID integration** → **iOS integration** 部分，复制 `MetaAppID` 和 `ClientToken`
-6. 打开 `CameraAccess/Info.plist`，在 `MWDAT` 字典中填入你的值：
+1. Go to [Meta Wearables Developer Center](https://wearables.developer.meta.com/)
+2. Sign up and log in
+3. Click **Projects** → **Create Project**
+4. Go to **App configuration** page
+5. Under **Application ID integration** → **iOS integration**, copy `MetaAppID` and `ClientToken`
+6. Open `CameraAccess/Info.plist` and fill in your values under `MWDAT`:
 
 ```xml
 <key>MWDAT</key>
@@ -154,476 +151,432 @@
     <key>AppLinkURLScheme</key>
     <string>turbometa://</string>
     <key>MetaAppID</key>
-    <string>你的MetaAppID</string>
+    <string>YOUR_META_APP_ID</string>
     <key>ClientToken</key>
-    <string>你的ClientToken</string>
+    <string>YOUR_CLIENT_TOKEN</string>
     <key>TeamID</key>
     <string>$(DEVELOPMENT_TEAM)</string>
 </dict>
 ```
 
-#### 步骤 2：编译运行
+#### Step 2: Build and Run
 
-1. 使用 **Xcode 15.0+** 打开 `CameraAccess.xcodeproj`
-2. 在 Xcode → Signing & Capabilities 中选择你的 Apple ID 和 Team
-3. 连接 iPhone，点击 Run 编译运行
-4. 打开 TurboMeta，在设置中配置你的阿里云 API Key 👉 [查看配置教程](#api-key-config)
+1. Open `CameraAccess.xcodeproj` with **Xcode 15.0+**
+2. Select your Apple ID and Team in Signing & Capabilities
+3. Connect your iPhone, click Run
+4. Configure your Alibaba Cloud API Key in Settings 👉 [See Configuration Guide](#api-key-config)
 
 ### 📱 Android
 
-> ⚠️ Android 版本目前停留在 v1.5.0，暂未包含 v2.0 的 OpenClaw 集成和 Meta Ray-Ban Display 支持。
+> ⚠️ Android is currently at v1.5.0 and does not yet include v2.0 features (OpenClaw, Meta Ray-Ban Display).
 
-👉 [**前往下载 APK**](https://github.com/Turbo1123/turbometa-rayban-ai/releases)
+👉 [**Download APK**](https://github.com/Turbo1123/turbometa-rayban-ai/releases)
 
-**安装步骤：**
-1. 下载 APK 文件
-2. 在设置中开启"允许安装未知来源应用"
-3. 打开 APK 进行安装
-4. 授予权限（蓝牙、麦克风）
-5. 在设置中配置 API Key 👉 [查看配置教程](#api-key-config)
+**Installation:**
+1. Download the APK file
+2. Enable "Install from unknown sources" in Settings
+3. Open APK to install
+4. Grant permissions (Bluetooth, Microphone)
+5. Configure API Key in Settings 👉 [See Configuration Guide](#api-key-config)
 
----
+### 🖥️ Use a Local AI Server (Ollama, llama.cpp, LM Studio, vLLM…)
 
-### 🔋 Ray-Ban Meta 电池升级 & 维修服务 <sup>`📢 广告`</sup>
+The Android app can route vision queries to any local server that exposes an
+**OpenAI-compatible** `/v1/chat/completions` endpoint — no cloud account needed,
+no data leaves your device/network.
 
-> 🇨🇳 **中国用户专属福利**
+1. Run your server. For example with [Ollama](https://ollama.com):
+   ```bash
+   ollama serve                       # default: http://localhost:11434
+   ollama pull llava                  # or any vision-capable model
+   ```
+   Or with [llama.cpp](https://github.com/ggerganov/llama.cpp) server, LM Studio,
+   vLLM, LocalAI, etc.
+2. Make sure the phone can reach it:
+   - **Phone same machine as server** → use `http://localhost:11434/v1` (works
+     via the `10.0.2.2` mapping on emulator, or the `localhost` mapping when
+     running on a rooted phone + reverse-tether).
+   - **Phone on the same Wi-Fi as the server** → use the server's LAN IP
+     (e.g. `http://192.168.1.42:11434/v1`).
+   - **Termux on the same phone** → start the server inside Termux and use
+     `http://127.0.0.1:11434/v1`.
+3. In the app: **Settings → Vision API Provider → Local Server (OpenAI-compatible)**.
+4. Pick a preset (Ollama / llama.cpp / LM Studio / vLLM) to auto-fill the URL
+   and model name, or pick **Custom** to type your own.
+5. Tap **Test connection** — the app will call `GET /v1/models` and list the
+   models your server reports. If you see them, you're good.
+6. Save. The API Key field is optional; leave it empty unless your server
+   enforces auth.
 
-很多国内朋友通过海淘购买了 Ray-Ban Meta 智能眼镜，但遇到了一些烦恼：
-
-- 😤 **一代电池续航太短** - 用不了多久就没电，体验大打折扣
-- 😰 **国内没有官方售后** - 坏了不知道找谁修，只能吃灰
-- 💸 **寄回美国维修成本高** - 运费贵、周期长、还不一定能修好
-
-**现在有解决方案了！** 一位专业维修 Ray-Ban Meta 的师傅可以帮你：
-
-✅ **Gen1 → Gen2 电池升级** - 续航时间翻倍，告别电量焦虑
-✅ **专业维修服务** - 解决各种硬件问题，让你的眼镜重获新生
-✅ **国内售后保障** - 再也不用担心坏了没人修
-
-#### 📊 续航对比：为什么要升级？
-
-| | Gen1 原装电池 | Gen2 升级电池 |
-|--|--------------|--------------|
-| **眼镜单次续航** | ~4 小时 | **~8 小时** ⚡ |
-
-> 💡 简单说：**一代换二代电池 = 续航直接翻倍**，同样的眼镜，两倍的体验！
-
-<table>
-  <tr>
-    <td><img src="./ad/电池更换计划.jpg" width="220"/></td>
-    <td><img src="./ad/更换后的图片.jpg" width="220"/></td>
-  </tr>
-</table>
-
-| 服务项目 | 价格 |
-|---------|------|
-| 电池升级原价 | ~~¥299~~ |
-| **Turbo 推荐价** | **¥249**（省 ¥50）|
-
-📱 **联系方式**：添加微信 `lifesux`，备注「**Turbo推荐**」即可享受优惠价
+The app uses the same `/v1/chat/completions` shape OpenAI uses, so any server
+that speaks that dialect works. Cleartext HTTP is allowed only to local-network
+hosts (`localhost`, `127.0.0.1`, `10.0.2.2`, and the common private LAN
+ranges) — see `android/app/src/main/res/xml/network_security_config.xml`.
 
 ---
 
-### 🔌 Ray-Ban Meta 外挂电池 <sup>`📢 广告`</sup>
+## 📖 Introduction
 
-> **随时随地，电力满满！**
+LocalMeta is a full-featured multimodal AI assistant built exclusively for RayBan Meta smart glasses, powered by Alibaba Cloud's Qwen multimodal AI models:
 
-不想拆机换电池？试试 **Transnovo 外挂电池充电仓**：
+- 🎯 **Live AI Conversations**: Real-time multimodal interaction through glasses camera and microphone
+- 🍎 **Smart Nutrition Analysis**: Capture food photos and get detailed nutritional information and health recommendations
+- 👁️ **Image Recognition**: Intelligently identify objects, scenes, and text in your field of view
+- 🎥 **Live Streaming**: Stream directly to platforms like Douyin, Kuaishou, and Xiaohongshu
+- 🌐 **Full Chinese Support**: Complete Chinese AI interaction experience, perfectly tailored for Chinese users
 
-<img src="./ad/adbattery.png" width="400"/>
+This is the world's first **fully Chinese-enabled** RayBan Meta AI assistant, bringing the convenience of smart glasses to Chinese-speaking users.
 
-- ⚡ **10000mAh 大容量** - 可为眼镜充满 2.5 次（Wayfarer/Skyler）
-- 🌡️ **极端温度适用** - -20°C ~ 50°C 正常工作
-- 📦 **一体化设计** - 充电仓 + 充电线，出门带一个就够
+## ✨ Core Features
 
-| 价格 | 说明 |
-|-----|------|
-| ~~¥299~~ | 原价 |
-| **¥279** | Turbo 推荐价（省 ¥20）|
+### 👁️ Quick Vision <sup>`NEW`</sup>
+- **Siri Wake-up**: Voice-triggered recognition without unlocking your phone
+- **Shortcuts Integration**: Supports iOS Shortcuts automation
+- **Action Button Support**: One-tap trigger on iPhone 15 Pro series
+- **High-quality TTS**: Voice announcement powered by qwen3-tts-flash
+- **Smart Recognition**: Based on qwen3-vl-plus multimodal visual understanding
 
-👉 [**查看详情**](./ad/外挂电池.jpg) | 📱 微信咨询：`lifesux`，备注「**Turbo推荐**」
+### 🤖 Live AI - Real-time Conversations
+- **Multimodal Interaction**: Simultaneous voice and visual input support
+- **Real-time Response**: Based on Qwen Omni-Realtime model with low-latency voice conversations
+- **Scene Understanding**: AI can see what's in front of you and provide relevant suggestions
+- **Natural Responses**: Smooth and natural Chinese conversation experience
+- **One-tap Hide**: Support for hiding conversation interface to focus on visual experience
 
----
+### 🍽️ LeanEat - Smart Nutrition Analysis
+- **Food Recognition**: Identify food types by taking photos
+- **Nutritional Content**: Detailed data on calories, protein, fat, carbohydrates, etc.
+- **Health Scoring**: Health scoring system from 0-100
+- **Nutrition Advice**: Personalized nutritional recommendations from AI
+- **Beautiful Interface**: Carefully designed UI with clear nutritional information display
 
-## 📖 简介
+### 📸 Real-time Photography
+- **Auto-start**: Automatically connects to glasses and starts preview when opened
+- **Multi-function Integration**: Choose nutrition analysis or AI recognition after taking photos
+- **Smooth Experience**: Real-time video stream preview
 
-TurboMeta 是专为 RayBan Meta 智能眼镜打造的全模态AI助手，集成了阿里云通义千问多模态大模型，实现了：
+### 🎥 Live Streaming
+- **Platform Support**: Compatible with mainstream live streaming platforms
+- **Clean Interface**: Pure view focused on streaming content
 
-- 🎯 **实时AI对话**：通过眼镜摄像头和麦克风进行多模态实时交互
-- 🍎 **智能营养分析**：拍摄食物即可获得详细的营养成分和健康建议
-- 👁️ **图像识别**：智能识别眼前的物体、场景和文字
-- 🎥 **直播推流**：支持抖音、快手、小红书等平台的直播功能
-- 🌐 **完整中文支持**：全中文AI交互体验，完美适配中文用户
-
-这是全球第一个实现**完全中文化**的 RayBan Meta AI 助手，让中文用户也能享受到智能眼镜带来的便利。
-
-## ✨ 核心功能
-
-### 👁️ Quick Vision - 快速识图 <sup>`NEW`</sup>
-- **Siri 唤醒**：无需解锁手机，语音触发识别
-- **快捷指令集成**：支持 iOS 快捷指令自动化
-- **操作按钮支持**：iPhone 15 Pro 系列一键触发
-- **高品质 TTS**：阿里云 qwen3-tts-flash 语音播报
-- **智能识别**：基于 qwen3-vl-plus 多模态视觉理解
-
-### 🤖 Live AI - 实时对话
-- **多模态交互**：同时支持语音和视觉输入
-- **实时响应**：基于通义千问 Omni-Realtime 模型，低延迟语音对话
-- **场景理解**：AI 能看到你眼前的画面并提供相关建议
-- **口语化回复**：自然流畅的中文对话体验
-- **一键隐藏**：支持隐藏对话界面，专注于视觉体验
-
-### 🍽️ LeanEat - 智能营养分析
-- **食物识别**：拍照即可识别食物种类
-- **营养成分**：详细的热量、蛋白质、脂肪、碳水化合物等数据
-- **健康评分**：0-100分的健康评分系统
-- **营养建议**：AI提供的个性化营养建议
-- **美观界面**：精心设计的UI，清晰展示营养信息
-
-### 📸 实时拍照
-- **自动启动**：打开界面自动连接眼镜并开始预览
-- **多功能集成**：拍照后可选择营养分析或AI识别
-- **流畅体验**：实时视频流预览
-
-### 🎥 直播功能
-- **平台支持**：适配主流直播平台
-- **简洁界面**：专注于直播内容的纯净视图
-
-## 🛠️ 技术栈
+## 🛠️ Tech Stack
 
 ### iOS
-- **平台**：iOS 17.0+
-- **语言**：Swift 5.0 + SwiftUI
-- **SDK**：Meta Wearables DAT SDK v0.5.0
-- **架构**：MVVM + Combine
-- **音频**：AVAudioEngine + AVAudioPlayerNode
+- **Platform**: iOS 17.0+
+- **Language**: Swift 5.0 + SwiftUI
+- **SDK**: Meta Wearables DAT SDK v0.5.0
+- **Architecture**: MVVM + Combine
+- **Audio**: AVAudioEngine + AVAudioPlayerNode
 
 ### Android
-- **平台**：Android 8.0+ (API 26)
-- **语言**：Kotlin 1.9 + Jetpack Compose
-- **SDK**：Meta Wearables DAT SDK v0.4.0
-- **架构**：MVVM + StateFlow
-- **UI**：Material 3 Design
+- **Platform**: Android 8.0+ (API 26)
+- **Language**: Kotlin 1.9 + Jetpack Compose
+- **SDK**: Meta Wearables DAT SDK v0.4.0
+- **Architecture**: MVVM + StateFlow
+- **UI**: Material 3 Design
 
-### AI 模型
-- **通义千问 Omni-Realtime**：实时多模态对话
-- **通义千问 VL-Plus**：视觉理解和图像分析
-- **通义千问 TTS-Flash**：高品质中文语音合成
+### AI Models
+- **Qwen Omni-Realtime**: Real-time multimodal conversations
+- **Qwen VL-Plus**: Visual understanding and image analysis
+- **Qwen TTS-Flash**: High-quality Chinese text-to-speech
 
-## 📋 前置要求
+## 📋 Requirements
 
-### 硬件要求
-- ✅ Ray-Ban Meta 智能眼镜 或 **Meta Ray-Ban Display**（新增支持）
-- ✅ iPhone（iOS 17.0 或更高版本）
-- ✅ 稳定的网络连接
+### Hardware Requirements
+- ✅ Ray-Ban Meta Smart Glasses or **Meta Ray-Ban Display** (newly supported)
+- ✅ iPhone (iOS 17.0+) or Android phone (8.0+)
+- ✅ Stable internet connection
 
-### 软件要求
-- ✅ Xcode 15.0 或更高版本
-- ✅ Meta View App（用于配对眼镜）
-- ✅ 阿里云账号（申请 API）
+### Software Requirements
+- ✅ Meta View App / Meta AI App (for pairing glasses)
+- ✅ Alibaba Cloud account (for API access)
+- ✅ Xcode 15.0+ (iOS development)
+- ✅ Android Studio (Android development)
 
-### API 要求
-需要申请以下阿里云 API：
-1. **通义千问 Omni-Realtime API**：用于实时对话
-2. **通义千问 VL-Plus API**：用于图像识别和营养分析
+### API Requirements
+You need to apply for the following Alibaba Cloud APIs:
+1. **Qwen Omni-Realtime API**: For real-time conversations
+2. **Qwen VL-Plus API**: For image recognition and nutrition analysis
 
-👉 [前往阿里云百炼申请 API](https://www.aliyun.com/product/bailian) | [百炼控制台](https://bailian.console.aliyun.com/)
+👉 [Apply for APIs at Alibaba Cloud Model Studio](https://www.alibabacloud.com/zh/product/modelstudio) | [Model Studio Console](https://bailian.console.alibabacloud.com/)
 
-## 🚀 安装指南
+## 🚀 Installation Guide
 
-### 步骤 1：开启 Meta View App 的 DAT SDK 预览模式
+### Step 1: Enable Meta DAT SDK Preview Mode
 
-⚠️ **重要**：由于 Meta Wearables DAT SDK 当前处于 Preview 阶段，必须在 Meta View App 中开启预览模式（此操作与 iOS 系统的开发者模式无关）。
+⚠️ **Important**: Since the Meta Wearables DAT SDK is currently in Preview, you must enable Preview Mode in Meta View App (this is unrelated to iOS Developer Mode).
 
-1. 在 iPhone 上打开 **Meta View App**（或 **Meta AI App**）
-2. 进入 **设置** → **应用信息** 或 **关于**
-3. 找到 **版本号**
-4. **连续点击版本号 5 次**
-5. 会出现提示信息
+1. Open **Meta View App** (or **Meta AI App**) on your iPhone
+2. Go to **Settings** → **App Info** or **About**
+3. Find **Version Number**
+4. **Tap the version number 5 times consecutively**
+5. A confirmation message will appear
 
-### 步骤 2：配置 API Key
+### Step 2: Configure API Key
 
-详细配置教程请参考 👉 [API Key 配置说明](#api-key-config)
+For detailed configuration guide, see 👉 [API Key Configuration](#api-key-config)
 
-简要步骤：
-1. 前往 [阿里云百炼](https://www.aliyun.com/product/bailian) 注册账号
-2. 登录 [百炼控制台](https://bailian.console.aliyun.com/) → API-KEY 管理 → 创建 API Key
-3. 在 App「设置」→「API Key 管理」中输入你的 API Key
+Quick steps:
+1. Visit [Alibaba Cloud Model Studio](https://www.alibabacloud.com/zh/product/modelstudio) to register
+2. Login to [Model Studio Console](https://bailian.console.alibabacloud.com/) → API-KEY Management → Create API Key
+3. Enter your API Key in App "Settings" → "API Key Management"
+4. **International users**: Select **Singapore** region in "Settings" for better connectivity
 
-### 步骤 3：编译项目
+### Step 3: Build the Project
 
-1. 用 Xcode 打开 `CameraAccess.xcodeproj`
-2. 选择你的开发团队（Team）
-3. 修改 Bundle Identifier（如果需要）
-4. 连接你的 iPhone
-5. 点击 **Run** 或按 `Cmd + R`
+1. Open `CameraAccess.xcodeproj` with Xcode
+2. Select your development team (Team)
+3. Modify Bundle Identifier (if needed)
+4. Connect your iPhone
+5. Click **Run** or press `Cmd + R`
 
-### 步骤 4：配对眼镜
+### Step 4: Pair Your Glasses
 
-1. 打开 Meta View App
-2. 配对你的 RayBan Meta 眼镜
-3. 确保蓝牙已开启
-4. 返回 TurboMeta App，等待连接成功
+1. Open Meta View App
+2. Pair your RayBan Meta glasses
+3. Ensure Bluetooth is enabled
+4. Return to LocalMeta App and wait for connection success
 
-## 📱 使用指南
+## 📱 Usage Guide
 
-### 首次使用
+### First-time Use
 
-1. 启动 TurboMeta App
-2. 确保 RayBan Meta 眼镜已配对并开启
-3. 等待设备连接（顶部会显示连接状态）
-4. 选择你想使用的功能
+1. Launch LocalMeta App
+2. Ensure RayBan Meta glasses are paired and turned on
+3. Wait for device connection (status shown at top)
+4. Select the feature you want to use
 
-### Live AI 实时对话
+### Live AI Real-time Conversations
 
-1. 点击首页的 **Live AI** 卡片
-2. 等待连接成功（右上角显示绿点）
-3. 开始说话，AI 会实时回复
-4. AI 可以看到你眼前的画面
-5. 点击 👁️ 按钮可以隐藏对话记录
+1. Tap the **Live AI** card on the home screen
+2. Wait for connection success (green dot in upper right)
+3. Start speaking, AI will respond in real-time
+4. AI can see what's in front of you
+5. Tap the 👁️ button to hide conversation history
 
-**使用技巧**：
-- 说话清晰，保持适当距离
-- 可以问"你看到了什么？"让 AI 描述画面
-- AI 会用简练的中文回答
+**Tips**:
+- Speak clearly and maintain appropriate distance
+- Ask "What do you see?" to have AI describe the scene
+- AI responds in concise Chinese
 
-### LeanEat 营养分析
+> ⚠️ **International Users**: In Settings → API Key Management, select **Singapore** region for Live AI. This uses the international WebSocket endpoint (`wss://dashscope-intl.aliyuncs.com`) for better connectivity outside China mainland.
 
-1. 点击首页的 **LeanEat** 卡片
-2. 对准食物，点击拍照按钮 📷
-3. 在照片预览中点击 **营养分析**
-4. 等待 AI 分析完成
-5. 查看营养成分、健康评分和建议
+### LeanEat Nutrition Analysis
 
-**使用场景**：
-- 餐前拍照，了解营养成分
-- 健身减脂时记录每日摄入
-- 学习食物的营养知识
+1. Tap the **LeanEat** card on the home screen
+2. Point at food and tap the camera button 📷
+3. In photo preview, tap **Nutrition Analysis**
+4. Wait for AI analysis to complete
+5. View nutritional content, health score, and recommendations
 
-### 直播功能
+**Use Cases**:
+- Take photos before meals to understand nutritional content
+- Track daily intake when on a fitness diet
+- Learn about food nutrition
 
-1. 点击首页的 **直播** 卡片
-2. 等待视频流启动
-3. 进行直播内容创作
-4. 点击停止按钮结束直播
+### Live Streaming
+
+1. Tap the **Live Stream** card on the home screen
+2. Wait for video stream to start
+3. Create your streaming content
+4. Tap stop button to end the stream
 
 ---
 
 <a id="quick-vision-tutorial"></a>
 
-## 👁️ Quick Vision 快速识图使用教程
+## 👁️ Quick Vision Tutorial
 
-Quick Vision 让你可以通过 Siri 或快捷指令，在不解锁手机的情况下快速识别眼前的物体。
+Quick Vision allows you to quickly identify objects in front of you through Siri or Shortcuts without unlocking your phone.
 
-### 📋 前置准备
+### 📋 Prerequisites
 
-1. ✅ 确保已安装 TurboMeta App 并配置好 API Key
-2. ✅ 确保 RayBan Meta 眼镜已配对并开启
-3. ✅ 首次使用需要打开一次 TurboMeta App 完成初始化
+1. ✅ LocalMeta App installed and API Key configured
+2. ✅ RayBan Meta glasses paired and turned on
+3. ✅ Open LocalMeta App once for first-time initialization
 
-### 🔧 设置快捷指令
+### 🔧 Setting Up Shortcuts
 
-#### 方式一：Siri 语音触发
+#### Method 1: Siri Voice Trigger
 
-1. 打开 iPhone 的 **快捷指令** App
-2. 点击右上角 **+** 创建新快捷指令
-3. 点击 **添加操作**
-4. 搜索 **TurboMeta** 或 **Turbo Meta**
-5. 选择 **快速识图** 操作
-6. 点击顶部的快捷指令名称，重命名为你喜欢的名字（如"识图"、"看看这是什么"）
-7. 点击 **完成** 保存
+1. Open the **Shortcuts** app on iPhone
+2. Tap **+** in the top right to create a new shortcut
+3. Tap **Add Action**
+4. Search for **LocalMeta** or **Turbo Meta**
+5. Select **Quick Vision** action
+6. Tap the shortcut name at the top to rename it (e.g., "Quick Vision", "What's This")
+7. Tap **Done** to save
 
-**使用方法**：
-- 说 "嘿 Siri，识图"（或你设置的快捷指令名称）
-- AI 会自动拍照、识别、并语音播报结果
+**How to Use**:
+- Say "Hey Siri, Quick Vision" (or your custom shortcut name)
+- AI will automatically capture, recognize, and announce the result
 
 <details>
-<summary>📸 点击查看设置截图</summary>
+<summary>📸 Click to view setup screenshots</summary>
 
-1. 在快捷指令 App 中搜索 TurboMeta
-2. 添加"快速识图"操作
-3. 重命名快捷指令
+1. Search for LocalMeta in Shortcuts app
+2. Add "Quick Vision" action
+3. Rename the shortcut
 
 </details>
 
-#### 方式二：iPhone 15 Pro 操作按钮
+#### Method 2: iPhone 15 Pro Action Button
 
-如果你使用 iPhone 15 Pro / 15 Pro Max / 16 系列，可以将快速识图绑定到操作按钮：
+If you have iPhone 15 Pro / 15 Pro Max / 16 series, you can bind Quick Vision to the Action Button:
 
-1. 打开 **设置** → **操作按钮**（或 **按钮** → **操作按钮**）
-2. 选择 **快捷指令**
-3. 选择你创建的 TurboMeta 快速识图快捷指令
-4. 完成设置
+1. Open **Settings** → **Action Button**
+2. Select **Shortcut**
+3. Choose your LocalMeta Quick Vision shortcut
+4. Done!
 
-**使用方法**：
-- 长按操作按钮即可触发快速识图
-- 无需解锁手机，戴着眼镜即可使用
+**How to Use**:
+- Long press the Action Button to trigger Quick Vision
+- No need to unlock your phone - works while wearing glasses
 
-#### 方式三：锁屏小组件
+#### Method 3: Lock Screen Widget
 
-1. 长按锁屏界面进入编辑模式
-2. 点击 **自定义**
-3. 在锁屏小组件区域添加 **快捷指令**
-4. 选择 TurboMeta 快速识图快捷指令
-5. 点击完成
+1. Long press on the lock screen to enter edit mode
+2. Tap **Customize**
+3. Add **Shortcuts** widget to the lock screen widget area
+4. Select LocalMeta Quick Vision shortcut
+5. Tap Done
 
-**使用方法**：
-- 在锁屏界面直接点击小组件即可触发
+**How to Use**:
+- Tap the widget directly on the lock screen to trigger
 
-### 🎯 Quick Vision 工作流程
+### 🎯 Quick Vision Workflow
 
 ```
-Siri/快捷指令触发
-      ↓
-  启动视频流
-      ↓
-  自动拍摄照片
-      ↓
-  停止视频流
-      ↓
-  AI 图像识别 (qwen3-vl-plus)
-      ↓
-  TTS 语音播报 (qwen3-tts-flash)
+Siri/Shortcut Trigger
+        ↓
+   Start Video Stream
+        ↓
+   Auto Capture Photo
+        ↓
+   Stop Video Stream
+        ↓
+   AI Image Recognition (qwen3-vl-plus)
+        ↓
+   TTS Voice Announcement (qwen3-tts-flash)
 ```
 
-### 💡 使用技巧
+### 💡 Tips
 
-- **确保眼镜已开启**：触发前确保眼镜没有在充电盒中
-- **保持稳定**：拍照时尽量保持头部稳定
-- **光线充足**：在光线良好的环境下识别效果更好
-- **等待播报**：识别需要几秒钟，请耐心等待语音播报
+- **Ensure glasses are on**: Make sure glasses aren't in the charging case
+- **Stay steady**: Keep your head stable while capturing
+- **Good lighting**: Better recognition in well-lit environments
+- **Wait for announcement**: Recognition takes a few seconds, wait patiently for voice announcement
 
-### ⚠️ 常见问题
+### ⚠️ Troubleshooting
 
-**Q: 为什么提示"眼镜未连接"？**
-- 确保眼镜已开启且与 Meta View App 配对
-- 确保已在 Meta View App 中开启 DAT SDK 预览模式
-- 尝试重新打开 TurboMeta App
+**Q: Why does it say "Glasses not connected"?**
+- Ensure glasses are on and paired with Meta View App
+- Make sure Meta DAT SDK Preview Mode is enabled in Meta View App
+- Try reopening LocalMeta App
 
-**Q: 为什么没有声音？**
-- 检查手机是否静音
-- 检查蓝牙音频输出设置
-- TTS 使用的是阿里云服务，需要网络连接
+**Q: Why is there no sound?**
+- Check if phone is on silent mode
+- Check Bluetooth audio output settings
+- TTS requires network connection (Alibaba Cloud service)
 
-**Q: 快捷指令中找不到 TurboMeta？**
-- 首次安装后需要打开一次 TurboMeta App
-- 尝试重启手机
+**Q: Can't find LocalMeta in Shortcuts?**
+- Open LocalMeta App at least once after installation
+- Try restarting your phone
 
 ---
 
-## ⚙️ 配置选项
+## ⚙️ Configuration Options
 
-### API 配置
+### API Configuration
 
-在 `VisionAPIConfig.swift` 中配置：
+Configure in `VisionAPIConfig.swift`:
 
 ```swift
 struct VisionAPIConfig {
-    // 阿里云 API Key
+    // Alibaba Cloud API Key
     static let apiKey = "sk-YOUR-API-KEY-HERE"
 
-    // API 基础 URL（通常不需要修改）
+    // API Base URL (usually doesn't need modification)
     static let baseURL = "https://dashscope.aliyuncs.com"
 }
 ```
 
-### 系统提示词
+### System Prompts
 
-可以在 `OmniRealtimeService.swift` 中自定义 AI 的回复风格：
+Customize AI response style in `OmniRealtimeService.swift`:
 
 ```swift
-"instructions": "你是RayBan Meta智能眼镜AI助手。回答要简练、口语化..."
+"instructions": "You are a RayBan Meta smart glasses AI assistant. Keep answers concise and conversational..."
 ```
 
-## 🔧 常见问题
+## 🔧 Troubleshooting
 
-### Q1: 眼镜连接不上怎么办？
+### Q1: Glasses won't connect?
 
-**解决方案**：
-1. 确保眼镜已在 Meta View App 中配对成功
-2. 检查蓝牙是否开启
-3. 重启 TurboMeta App
-4. 重启眼镜（放入眼镜盒充电仓）
-5. 确保已在 Meta View App 中开启 DAT SDK 预览模式
+**Solutions**:
+1. Ensure glasses are successfully paired in Meta View App
+2. Check if Bluetooth is enabled
+3. Restart LocalMeta App
+4. Restart glasses (place in charging case)
+5. Ensure Meta DAT SDK Preview Mode is enabled in Meta View App
 
-### Q2: AI 没有回复或回复很慢？
+### Q2: AI not responding or responding slowly?
 
-**解决方案**：
-1. 检查网络连接是否稳定
-2. 确认 API Key 是否正确配置
-3. 查看阿里云 API 额度是否充足
-4. 检查控制台日志排查错误
+**Solutions**:
+1. Check if internet connection is stable
+2. Verify API Key is correctly configured
+3. Check if Alibaba Cloud API quota is sufficient
+4. Review console logs for errors
 
-### Q3: 营养分析结果不准确？
+### Q3: Nutrition analysis results inaccurate?
 
-**解决方案**：
-1. 确保食物拍摄清晰
-2. 尽量在良好光线下拍摄
-3. 食物尽量完整展示在画面中
-4. AI 分析仅供参考，不能替代专业营养师
+**Solutions**:
+1. Ensure food photos are clear
+2. Take photos in good lighting
+3. Show food completely in frame
+4. AI analysis is for reference only, not a substitute for professional nutritionists
 
-### Q4: Xcode 编译失败或无法在设备上运行？
+### Q4: Xcode build fails or cannot run on device?
 
-**解决方案**：
-1. 确认 iPhone 已在 Xcode 中注册为开发设备
-2. 检查 Xcode → Signing & Capabilities 中的签名配置是否正确
-3. 在 Xcode 项目设置中修改 Bundle Identifier 以避免冲突
-4. 确保在 Xcode → Settings → Accounts 中已登录有效的 Apple ID
+**Solutions**:
+1. Ensure your iPhone is registered as a development device in Xcode
+2. Verify your signing configuration in Xcode → Signing & Capabilities
+3. Change the Bundle Identifier in Xcode project settings to avoid conflicts
+4. Ensure you are signed in with a valid Apple ID in Xcode → Settings → Accounts
 
-### Q5: 语音识别不准确？
+### Q5: Voice recognition inaccurate?
 
-**解决方案**：
-1. 确保环境相对安静
-2. 说话清晰，语速适中
-3. 麦克风不要被遮挡
-4. 当前主要优化了中文，其他语言可能不太准确
+**Solutions**:
+1. Ensure environment is relatively quiet
+2. Speak clearly at moderate speed
+3. Don't obstruct the microphone
+4. Currently optimized for Chinese, other languages may be less accurate
 
-## 🔗 OpenClaw 集成
+## 🔗 OpenClaw Integration
 
-TurboMeta 支持连接 [OpenClaw](https://openclaw.ai) — 一个开源的本地 AI 助手。通过 OpenClaw，你可以用眼镜拍照并让 AI 分析，还可以通过语音转录与 AI 对话。
+LocalMeta supports connecting to [OpenClaw](https://openclaw.ai) — an open-source personal AI assistant. Through OpenClaw, you can snap photos with your glasses and have AI analyze them, or use voice-to-text to chat with AI.
 
-### 功能
+### Features
 
-- 📷 **拍照发送**：一键抓取眼镜画面发送给 OpenClaw AI
-- 🎙️ **语音转录**：通过阿里云实时语音识别，边说边转文字，自动发送给 AI
-- ⌨️ **文字聊天**：直接输入文字与 AI 对话
-- 🔄 **自动连接**：配置保存后，每次打开自动连接 Gateway
+- 📷 **Photo Capture**: One-tap to capture glasses view and send to OpenClaw AI
+- 🎙️ **Voice Transcription**: Real-time speech-to-text via Alibaba Fun-ASR, auto-sent to AI
+- ⌨️ **Text Chat**: Type messages directly to AI
+- 🔄 **Auto-connect**: Saved configuration auto-connects on launch
 
-> ⚠️ 由于 Meta DAT SDK 的限制，眼镜摄像头无法在后台访问。使用 OpenClaw 拍照功能时，需要在 App 前台操作。
+> ⚠️ Due to Meta DAT SDK limitations, the glasses camera cannot be accessed in the background. Use the photo capture feature while the app is in the foreground.
 
-### 配置步骤
+### Setup
 
-#### 1. 安装并启动 OpenClaw
+#### 1. Install and Start OpenClaw
 
 ```bash
-# 安装 OpenClaw
 curl -fsSL https://openclaw.ai/install.sh | bash
-
-# 启动 Gateway
 openclaw gateway install
 ```
 
-#### 2. 配置 Gateway 允许局域网访问
+#### 2. Configure Gateway for LAN Access
 
-编辑 `~/.openclaw/openclaw.json`，将 Gateway 绑定到局域网：
-
-```json
-{
-  "gateway": {
-    "bind": "lan"
-  }
-}
-```
-
-重启 Gateway 使配置生效：
-
-```bash
-openclaw gateway restart
-```
-
-#### 3. 允许眼镜拍照命令
-
-`camera.snap` 默认不在允许列表中，需要手动添加。编辑 `~/.openclaw/openclaw.json`：
+Edit `~/.openclaw/openclaw.json`:
 
 ```json
 {
@@ -636,124 +589,129 @@ openclaw gateway restart
 }
 ```
 
-#### 4. 在 App 中连接
+Then restart: `openclaw gateway restart`
 
-1. 打开 TurboMeta → 设置 → OpenClaw
-2. 输入 Gateway 地址（如 `192.168.1.100`）和端口（默认 `18789`）
-3. 输入 Gateway Token（在 OpenClaw Dashboard URL 中可以找到）
-4. 点击连接
+#### 3. Connect from App
 
-首次连接时，Gateway 会要求设备配对。在终端执行：
+1. Open LocalMeta → Settings → OpenClaw
+2. Enter Gateway address (e.g., `192.168.1.100`) and port (`18789`)
+3. Enter Gateway Token (found in the OpenClaw Dashboard URL)
+4. Tap Connect
+
+First connection requires device pairing approval:
 
 ```bash
-openclaw devices list    # 查看待配对设备
-openclaw devices approve # 批准配对
+openclaw devices list    # View pending devices
+openclaw devices approve # Approve pairing
 ```
 
-#### 5. 外网访问（可选）
+#### 4. Remote Access (Optional)
 
-如果需要在外网访问 Gateway，推荐使用 [Tailscale](https://tailscale.com/)：
+For accessing Gateway outside your LAN, use [Tailscale](https://tailscale.com/):
 
-1. 在运行 Gateway 的电脑和手机上都安装 Tailscale
-2. 两台设备登录同一个 Tailscale 账号
-3. 在 App 中使用 Tailscale 分配的 IP 地址连接（如 `100.x.x.x:18789`）
+1. Install Tailscale on both the Gateway machine and your phone
+2. Log in with the same Tailscale account on both devices
+3. In the app, use the Tailscale-assigned IP (e.g., `100.x.x.x:18789`)
 
-Tailscale 会自动建立加密的点对点连接，无需开放公网端口。
+Tailscale creates an encrypted peer-to-peer tunnel — no public ports needed.
 
 ---
 
-## 🔒 隐私和安全
+## 🔒 Privacy and Security
 
-- ✅ 所有音视频数据仅用于 AI 处理
-- ✅ 不会存储或上传用户隐私数据
-- ✅ API 通信使用 HTTPS 加密
-- ✅ 图片和语音仅在会话期间保留
-- ✅ 遵循行业标准的数据处理最佳实践
+- ✅ All audio/video data is only used for AI processing
+- ✅ No storage or upload of user privacy data
+- ✅ API communications use HTTPS encryption
+- ✅ Images and voice are retained only during session
+- ✅ Follows industry best practices for data handling
 
-## 🗺️ 开发路线图
+## 🗺️ Roadmap
 
-### ✅ 已完成
-- [x] Live AI 实时对话
-- [x] LeanEat 营养分析
-- [x] 图像识别
-- [x] RTMP 直播推流
-- [x] 中英文双语支持
-- [x] 对话记录保存
-- [x] Android 版本发布
-- [x] Quick Vision 快速识图 + Siri 快捷指令
-- [x] 实时翻译（18 种语言）
-- [x] **OpenClaw 集成** 🆕
-- [x] **Meta Ray-Ban Display 支持** 🆕
-- [x] **DAT SDK v0.5.0 升级** 🆕
-- [x] **阿里云实时语音识别（Fun-ASR）** 🆕
+### ✅ Completed
+- [x] Live AI real-time conversations
+- [x] LeanEat nutrition analysis
+- [x] Image recognition
+- [x] Basic live streaming functionality
+- [x] Bilingual Chinese/English support
+- [x] Conversation history saving
+- [x] One-tap hide conversations
+- [x] **Android version released** 🎉
+- [x] **Quick Vision** 🆕
+  - [x] Siri Shortcuts integration
+  - [x] App Intent support
+  - [x] Alibaba Cloud TTS voice announcement
+  - [x] iPhone Action Button support
 
-### 🚧 进行中
-- [ ] OpenClaw Node 模式（AI 主动调用眼镜拍照）
-- [ ] Android v2.0 更新
-- [ ] 性能优化
+### 🚧 In Progress
+- [ ] Improve multilingual support
+- [ ] Optimize UI/UX
+- [ ] Performance optimization
 
-### 📅 计划中
-- [ ] WordLearn 单词学习
-- [ ] 云端同步对话记录
-- [ ] 离线模式
-- [ ] Apple Watch 配套应用
+### 📅 Planned
+- [ ] Real-time translation feature
+- [ ] WordLearn vocabulary learning
+- [ ] Cloud conversation sync
+- [ ] More live streaming platform support
+- [ ] Offline mode
+- [ ] Apple Watch companion app
+- [ ] Android Quick Vision support
 
-## 🤝 贡献
+## 🤝 Contributing
 
-欢迎贡献代码、报告 Bug 或提出新功能建议！
+Contributions, bug reports, and feature suggestions are welcome!
 
-1. Fork 本项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+1. Fork this project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 📄 许可证
+## 📄 License
 
-本项目基于 Meta Platforms, Inc. 的原始代码修改而来，遵循原项目的许可证。
+This project is based on modifications of original code from Meta Platforms, Inc. and follows the original project's license.
 
-部分代码版权归 Meta Platforms, Inc. 及其关联公司所有。
+Some code copyright belongs to Meta Platforms, Inc. and its affiliates.
 
-请参阅 [LICENSE](LICENSE) 文件了解详细信息。
+Please see [LICENSE](LICENSE) file for details.
 
-## 🙏 致谢
+## 🙏 Acknowledgments
 
-- **Meta Platforms, Inc.** - 提供 DAT SDK 和原始示例代码
-- **阿里云通义千问团队** - 提供强大的多模态 AI 能力
-- **RayBan** - 出色的智能眼镜硬件
+- **Meta Platforms, Inc.** - For providing DAT SDK and original sample code
+- **Alibaba Cloud Qwen Team** - For powerful multimodal AI capabilities
+- **RayBan** - For excellent smart glasses hardware
 
-## 🚀 如何开源此项目
+## 🚀 How to Open Source This Project
 
-### 1. 创建 GitHub 仓库
+### 1. Create GitHub Repository
 
 ```bash
-# 在 GitHub 网站上创建新仓库
-# 然后在项目目录执行：
+# Create a new repository on GitHub website
+# Then execute in your project directory:
 git init
 git add .
-git commit -m "Initial commit: TurboMeta - RayBan Meta AI Assistant"
+git commit -m "Initial commit: LocalMeta - RayBan Meta AI Assistant"
 git branch -M main
-git remote add origin https://github.com/你的用户名/仓库名.git
+git remote add origin https://github.com/your-username/your-repo.git
 git push -u origin main
 ```
 
-### 2. 保护敏感信息
+### 2. Protect Sensitive Information
 
-✅ **已完成的安全措施**：
-- API Key 不再硬编码在代码中
-- 使用 iOS Keychain 安全存储用户的 API Key
-- 用户需在 App 内「设置」中自行配置
+✅ **Security Measures Implemented**:
+- API Keys are no longer hardcoded in the source code
+- Uses iOS Keychain for secure storage of user API Keys
+- Users configure their own API Keys in the App Settings
 
-⚠️ **发布前检查**：
+⚠️ **Pre-release Checklist**:
 ```bash
-# 搜索可能残留的敏感信息
+# Search for potential sensitive information
 grep -r "sk-" .
 grep -r "API" . | grep -i "key"
 ```
 
-### 3. 添加 .gitignore 文件
+### 3. Add .gitignore File
 
-在项目根目录创建 `.gitignore` 文件：
+Create a `.gitignore` file in project root:
 
 ```gitignore
 # Xcode
@@ -770,7 +728,7 @@ DerivedData/
 *.xcuserstate
 *.xcworkspace
 
-# API Keys (额外保护)
+# API Keys (extra protection)
 **/*APIKey*.swift
 **/APIKeys.swift
 **/*Secret*.swift
@@ -779,57 +737,67 @@ DerivedData/
 .DS_Store
 ```
 
-### 4. 选择开源协议
+### 4. Choose Open Source License
 
-本项目基于 Meta DAT SDK 示例代码，遵循原项目许可证。你可以：
-- 保持与 Meta 相同的许可证
-- 为你的代码部分选择 MIT、Apache 2.0 等许可证
-- 在 LICENSE 文件中注明原始代码来源
+This project is based on Meta DAT SDK sample code and follows the original project's license. You can:
+- Keep the same license as Meta's original project
+- Choose MIT, Apache 2.0, or other permissive licenses for your code
+- Acknowledge the original source code in the LICENSE file
 
 <a id="api-key-config"></a>
-### 5. 用户配置说明
+### 5. User Configuration Instructions
 
-⚠️ **重要提示**：使用本项目的用户需要配置阿里云 API Key：
+⚠️ **Important Notice**: Users need to configure Alibaba Cloud API Key:
 
-#### 第一步：注册阿里云账号
-前往 [阿里云百炼](https://www.aliyun.com/product/bailian) 注册账号
+#### Step 1: Register Alibaba Cloud Account
+Visit [Alibaba Cloud Model Studio](https://www.alibabacloud.com/zh/product/modelstudio) to register
 
-#### 第二步：获取 API Key
-1. 登录 [百炼控制台](https://bailian.console.aliyun.com/)
-2. 在左侧菜单找到「**API-KEY 管理**」
-3. 点击「**创建 API Key**」生成密钥
-4. 复制生成的 API Key
+#### Step 2: Get API Key
+1. Login to [Model Studio Console](https://bailian.console.alibabacloud.com/)
+2. Find "**API-KEY Management**" in the left menu
+3. Click "**Create API Key**" to generate a key
+4. Copy the generated API Key
 
-#### ：在 App 中配置
-1. 打开 TurboMeta App
-2. 进入「**设置**」→「**API Key 管理**」
-3. 粘贴你的 API Key 并保存
+#### Step 3: Configure in App
+1. Open LocalMeta App
+2. Go to "**Settings**" → "**API Key Management**"
+3. Paste your API Key and save
 
-> 🔒 **安全说明**：API Key 在 iOS 上存储于 Keychain，在 Android 上使用 EncryptedSharedPreferences 加密存储，不会泄露
+> 🔒 **Security Note**: API Key is stored in iOS Keychain and Android EncryptedSharedPreferences, never exposed
 
-## 🌟 如果这个项目对你有帮助
+## 🌟 If This Project Helps You
 
-- ⭐️ 给项目点个 Star
-- 🐛 报告 Bug 或提出建议
-- 🔀 Fork 并贡献代码
-- 📢 分享给更多人
+- ⭐️ Star the project
+- 🐛 Report bugs or suggest features
+- 🔀 Fork and contribute code
+- 📢 Share with others
 
-## ☕ 请我喝杯咖啡
+## ☕ Support the Project
 
-如果这个项目对你有帮助，欢迎请我喝杯咖啡！
+If this project helps you, consider supporting development! Your support keeps this project alive and growing.
 
 <div align="center">
-<img src="./screenshots/请我喝咖啡.png" width="200" alt="微信支付"/>
 
-**微信支付**
+<a href="https://buymeacoffee.com/turbo1123" target="_blank">
+  <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee" height="50"/>
+</a>
+
+### ☕ [**Buy me a coffee**](https://buymeacoffee.com/turbo1123)
+
 </div>
+
+**Why support?**
+- 🚀 Help fund new features and updates
+- 🐛 Support ongoing bug fixes and maintenance
+- 🌍 Enable more language support
+- ❤️ Show appreciation for open source work
 
 ---
 
 <div align="center">
 
-**让智能眼镜说中文 🇨🇳**
+**Making Smart Glasses Smarter 🕶️**
 
-Made with ❤️ for RayBan Meta Users
+Made with ❤️ for RayBan Meta Users Worldwide
 
 </div>

@@ -14,7 +14,7 @@ class ConversationStorage(context: Context) {
     private val gson = Gson()
 
     companion object {
-        private const val PREFS_NAME = "turbometa_conversations"
+        private const val PREFS_NAME = "localmeta_conversations"
         private const val KEY_CONVERSATIONS = "saved_conversations"
         private const val MAX_RECORDS = 100
 

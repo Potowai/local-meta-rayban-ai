@@ -42,5 +42,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TurboMeta"
+rootProject.name = "LocalMeta"
 include(":app")

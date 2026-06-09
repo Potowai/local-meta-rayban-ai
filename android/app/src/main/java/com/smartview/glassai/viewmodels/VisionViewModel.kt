@@ -143,7 +143,7 @@ class VisionViewModel(application: Application) : AndroidViewModel(application) 
                 put(MediaStore.Images.Media.DISPLAY_NAME, "Vision_${System.currentTimeMillis()}.jpg")
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/TurboMeta")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/LocalMeta")
                     put(MediaStore.Images.Media.IS_PENDING, 1)
                 }
             }

@@ -50,7 +50,7 @@ sealed class BottomNavItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TurboMetaNavigation(
+fun LocalMetaNavigation(
     wearablesViewModel: WearablesViewModel,
     onRequestWearablesPermission: suspend (Permission) -> PermissionStatus
 ) {

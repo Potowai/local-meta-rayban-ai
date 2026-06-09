@@ -27,7 +27,7 @@ class QuickVisionStorage(private val context: Context) {
 
     companion object {
         private const val TAG = "QuickVisionStorage"
-        private const val PREFS_NAME = "turbometa_quick_vision"
+        private const val PREFS_NAME = "localmeta_quick_vision"
         private const val KEY_RECORDS = "saved_records"
         private const val THUMBNAIL_DIR = "quick_vision_thumbnails"
         private const val MAX_RECORDS = 100

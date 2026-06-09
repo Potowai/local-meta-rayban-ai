@@ -167,7 +167,7 @@ fun SectionHeader(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TurboMetaTopBar(
+fun LocalMetaTopBar(
     title: String,
     onBackClick: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {}

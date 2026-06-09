@@ -48,7 +48,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun TurboMetaTheme(
+fun LocalMetaTheme(
     content: @Composable () -> Unit
 ) {
     // Always use light theme
