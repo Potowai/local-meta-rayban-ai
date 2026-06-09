@@ -17,6 +17,7 @@ class APIKeyManager {
     private let alibabaSingaporeAccount = "alibaba-singapore-api-key"
     private let openrouterAccount = "openrouter-api-key"
     private let googleAccount = "google-api-key"
+    private let customAccount = "custom-api-key"  // For local OpenAI-compatible servers (optional)
     private let legacyAccount = "qwen-api-key" // For backward compatibility (migrates to Beijing)
     private let legacyAlibabaAccount = "alibaba-api-key" // Old format (migrates to Beijing)
 
@@ -84,6 +85,26 @@ class APIKeyManager {
         return getGoogleAPIKey() != nil
     }
 
+    // MARK: - Custom API Key (for local OpenAI-compatible servers, optional)
+
+    func saveCustomAPIKey(_ key: String) -> Bool {
+        // Empty key is allowed (most local servers don't require auth) — but we still
+        // store the empty value so hasCustomAPIKey reflects the user's intent.
+        return saveKey(key, for: customAccount)
+    }
+
+    func getCustomAPIKey() -> String? {
+        return getKey(for: customAccount)
+    }
+
+    func deleteCustomAPIKey() -> Bool {
+        return deleteKey(for: customAccount)
+    }
+
+    func hasCustomAPIKey() -> Bool {
+        return getCustomAPIKey() != nil
+    }
+
     // MARK: - Backward Compatible Methods (defaults to current provider)
 
     func saveAPIKey(_ key: String) -> Bool {
@@ -118,6 +139,9 @@ class APIKeyManager {
             }
         case .openrouter:
             return openrouterAccount
+        case .custom:
+            // Custom provider uses its own dedicated keychain entry
+            return customAccount
         }
     }
 

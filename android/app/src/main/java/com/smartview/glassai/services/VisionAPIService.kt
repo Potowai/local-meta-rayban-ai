@@ -66,23 +66,31 @@ class VisionAPIService(
                 AlibabaEndpoint.SINGAPORE -> ALIBABA_SINGAPORE_URL
             }
             APIProvider.OPENROUTER -> OPENROUTER_URL
+            APIProvider.CUSTOM -> providerManager.customBaseURL.value
         }
 
     private val apiKey: String?
         get() = when (currentProvider) {
             APIProvider.ALIBABA -> apiKeyManager.getAPIKey(APIProvider.ALIBABA, alibabaEndpoint)
             APIProvider.OPENROUTER -> apiKeyManager.getAPIKey(APIProvider.OPENROUTER)
+            APIProvider.CUSTOM -> {
+                val k = apiKeyManager.getCustomAPIKey()
+                if (k.isNullOrBlank()) null else k
+            }
         }
 
     private val model: String
-        get() = providerManager.selectedModel.value
+        get() = when (currentProvider) {
+            APIProvider.CUSTOM -> providerManager.customModel.value
+            else -> providerManager.selectedModel.value
+        }
 
     // MARK: - Analyze Image
 
     suspend fun analyzeImage(image: Bitmap, prompt: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             val key = apiKey
-            if (key.isNullOrBlank()) {
+            if (key.isNullOrBlank() && currentProvider != APIProvider.CUSTOM) {
                 return@withContext Result.failure(VisionAPIError.NoAPIKey)
             }
 
@@ -94,8 +102,12 @@ class VisionAPIService(
 
             val requestBuilder = Request.Builder()
                 .url(url)
-                .addHeader("Authorization", "Bearer $key")
                 .addHeader("Content-Type", "application/json")
+
+            // Authorization header is optional for local servers
+            if (!key.isNullOrBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer $key")
+            }
 
             // Add OpenRouter-specific headers
             if (currentProvider == APIProvider.OPENROUTER) {

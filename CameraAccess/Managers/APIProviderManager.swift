@@ -1,10 +1,62 @@
 /*
  * API Provider Manager
- * 管理不同的 API 提供商 (阿里云 Dashscope / OpenRouter)
+ * 管理不同的 API 提供商 (阿里云 Dashscope / OpenRouter / 本地 OpenAI 兼容服务)
  */
 
 import Foundation
 import SwiftUI
+
+// MARK: - Local Server Presets (for quick setup)
+
+/// 内置预设：常见本地 AI 服务的默认地址
+enum LocalServerPreset: String, CaseIterable, Codable {
+    case ollama
+    case llamacpp
+    case lmstudio
+    case vllm
+    case custom
+
+    var displayName: String {
+        switch self {
+        case .ollama: return "Ollama"
+        case .llamacpp: return "llama.cpp"
+        case .lmstudio: return "LM Studio"
+        case .vllm: return "vLLM"
+        case .custom: return "Personnalisé"
+        }
+    }
+
+    /// 默认 Base URL（OpenAI 兼容端点）
+    var defaultBaseURL: String {
+        switch self {
+        case .ollama: return "http://localhost:11434/v1"
+        case .llamacpp: return "http://localhost:8080/v1"
+        case .lmstudio: return "http://localhost:1234/v1"
+        case .vllm: return "http://localhost:8000/v1"
+        case .custom: return ""
+        }
+    }
+
+    var defaultModel: String {
+        switch self {
+        case .ollama: return "llava"
+        case .llamacpp: return "local"
+        case .lmstudio: return "local-model"
+        case .vllm: return "local-model"
+        case .custom: return ""
+        }
+    }
+
+    var helpURL: String? {
+        switch self {
+        case .ollama: return "https://github.com/ollama/ollama"
+        case .llamacpp: return "https://github.com/ggerganov/llama.cpp"
+        case .lmstudio: return "https://lmstudio.ai/"
+        case .vllm: return "https://github.com/vllm-project/vllm"
+        case .custom: return nil
+        }
+    }
+}
 
 // MARK: - Alibaba Endpoint Enum
 
@@ -39,11 +91,13 @@ enum AlibabaEndpoint: String, CaseIterable, Codable {
 enum APIProvider: String, CaseIterable, Codable {
     case alibaba = "alibaba"
     case openrouter = "openrouter"
+    case custom = "custom"   // 本地 OpenAI 兼容服务 (Ollama, llama.cpp, LM Studio...)
 
     var displayName: String {
         switch self {
         case .alibaba: return "阿里云 Dashscope"
         case .openrouter: return "OpenRouter"
+        case .custom: return "Serveur local (OpenAI compatible)"
         }
     }
 
@@ -51,6 +105,7 @@ enum APIProvider: String, CaseIterable, Codable {
         switch self {
         case .alibaba: return endpoint.baseURL
         case .openrouter: return "https://openrouter.ai/api/v1"
+        case .custom: return APIProviderManager.staticCustomBaseURL
         }
     }
 
@@ -62,6 +117,7 @@ enum APIProvider: String, CaseIterable, Codable {
         switch self {
         case .alibaba: return "qwen3-vl-plus"
         case .openrouter: return "google/gemini-3-flash-preview"
+        case .custom: return APIProviderManager.staticCustomModel
         }
     }
 
@@ -69,11 +125,20 @@ enum APIProvider: String, CaseIterable, Codable {
         switch self {
         case .alibaba: return "https://help.aliyun.com/zh/model-studio/get-api-key"
         case .openrouter: return "https://openrouter.ai/keys"
+        case .custom: return "https://github.com/ollama/ollama/blob/main/docs/api.md"
         }
     }
 
     var supportsVision: Bool {
         return true
+    }
+
+    /// 本地服务不需要 API Key（用户可以 quand même en mettre une si le serveur l'exige）
+    var requiresAPIKey: Bool {
+        switch self {
+        case .alibaba, .openrouter: return true
+        case .custom: return false
+        }
     }
 }
 
@@ -190,6 +255,12 @@ class APIProviderManager: ObservableObject {
     private let liveAIProviderKey = "liveai_provider"
     private let liveAIModelKey = "liveai_model"
 
+    // Local / Custom server config
+    private let customPresetKey = "custom_preset"
+    private let customBaseURLKey = "custom_base_url"
+    private let customModelKey = "custom_model"
+    private let customAPIKeyKey = "custom_api_key"  // optionnel, certains serveurs l'exigent
+
     @Published var currentProvider: APIProvider {
         didSet {
             UserDefaults.standard.set(currentProvider.rawValue, forKey: providerKey)
@@ -229,6 +300,29 @@ class APIProviderManager: ObservableObject {
         }
     }
 
+    // MARK: - Local server (custom provider) configuration
+
+    @Published var customPreset: LocalServerPreset {
+        didSet {
+            UserDefaults.standard.set(customPreset.rawValue, forKey: customPresetKey)
+            // Auto-fill URL & model when switching preset (sauf si custom)
+            if oldValue != customPreset && customPreset != .custom {
+                customBaseURL = customPreset.defaultBaseURL
+                if customModel.isEmpty {
+                    customModel = customPreset.defaultModel
+                }
+            }
+        }
+    }
+
+    @Published var customBaseURL: String {
+        didSet { UserDefaults.standard.set(customBaseURL, forKey: customBaseURLKey) }
+    }
+
+    @Published var customModel: String {
+        didSet { UserDefaults.standard.set(customModel, forKey: customModelKey) }
+    }
+
     @Published var openRouterModels: [OpenRouterModel] = []
     @Published var isLoadingModels = false
     @Published var modelsError: String?
@@ -253,6 +347,26 @@ class APIProviderManager: ObservableObject {
 
         let savedLiveAIModel = UserDefaults.standard.string(forKey: liveAIModelKey)
         self.liveAIModel = savedLiveAIModel ?? liveProvider.defaultModel
+
+        // Local server config
+        let savedPreset = UserDefaults.standard.string(forKey: customPresetKey) ?? LocalServerPreset.ollama.rawValue
+        self.customPreset = LocalServerPreset(rawValue: savedPreset) ?? .ollama
+
+        let savedBaseURL = UserDefaults.standard.string(forKey: customBaseURLKey) ?? ""
+        self.customBaseURL = savedBaseURL.isEmpty ? LocalServerPreset.ollama.defaultBaseURL : savedBaseURL
+
+        let savedCustomModel = UserDefaults.standard.string(forKey: customModelKey) ?? ""
+        self.customModel = savedCustomModel.isEmpty ? LocalServerPreset.ollama.defaultModel : savedCustomModel
+    }
+
+    // MARK: - Custom server API Key (optional, stored in Keychain)
+
+    func setCustomAPIKey(_ key: String) {
+        APIKeyManager.shared.saveCustomAPIKey(key)
+    }
+
+    func getCustomAPIKey() -> String {
+        return APIKeyManager.shared.getCustomAPIKey() ?? ""
     }
 
     // MARK: - Live AI Configuration
@@ -281,10 +395,14 @@ class APIProviderManager: ObservableObject {
     }
 
     var currentAPIKey: String {
-        if currentProvider == .alibaba {
+        switch currentProvider {
+        case .alibaba:
             return APIKeyManager.shared.getAPIKey(for: currentProvider, endpoint: alibabaEndpoint) ?? ""
+        case .openrouter:
+            return APIKeyManager.shared.getAPIKey(for: currentProvider) ?? ""
+        case .custom:
+            return APIKeyManager.shared.getCustomAPIKey() ?? ""
         }
-        return APIKeyManager.shared.getAPIKey(for: currentProvider) ?? ""
     }
 
     var currentModel: String {
@@ -292,10 +410,15 @@ class APIProviderManager: ObservableObject {
     }
 
     var hasAPIKey: Bool {
-        if currentProvider == .alibaba {
+        switch currentProvider {
+        case .alibaba:
             return APIKeyManager.shared.hasAPIKey(for: currentProvider, endpoint: alibabaEndpoint)
+        case .openrouter:
+            return APIKeyManager.shared.hasAPIKey(for: currentProvider)
+        case .custom:
+            // Le custom provider est "ready" dès que l'URL et le modèle sont configurés
+            return !customBaseURL.isEmpty && !customModel.isEmpty
         }
-        return APIKeyManager.shared.hasAPIKey(for: currentProvider)
     }
 
     // MARK: - OpenRouter Models
@@ -388,22 +511,50 @@ extension APIProviderManager {
     }
 
     nonisolated static var staticCurrentModel: String {
+        // For custom provider, prefer the explicitly configured custom model
+        if staticCurrentProvider == .custom {
+            return staticCustomModel
+        }
         let savedModel = UserDefaults.standard.string(forKey: "selected_vision_model")
         return savedModel ?? staticCurrentProvider.defaultModel
     }
 
     nonisolated static var staticBaseURL: String {
+        if staticCurrentProvider == .custom {
+            return staticCustomBaseURL
+        }
         return staticCurrentProvider.baseURL(endpoint: staticAlibabaEndpoint)
     }
 
     nonisolated static var staticAPIKey: String {
-        if staticCurrentProvider == .alibaba {
+        switch staticCurrentProvider {
+        case .alibaba:
             return APIKeyManager.shared.getAPIKey(for: staticCurrentProvider, endpoint: staticAlibabaEndpoint) ?? ""
+        case .openrouter:
+            return APIKeyManager.shared.getAPIKey(for: staticCurrentProvider) ?? ""
+        case .custom:
+            return APIKeyManager.shared.getCustomAPIKey() ?? ""
         }
-        return APIKeyManager.shared.getAPIKey(for: staticCurrentProvider) ?? ""
     }
 
     nonisolated static var staticLiveAIWebsocketURL: String {
         return staticLiveAIProvider.websocketURL(endpoint: staticAlibabaEndpoint)
+    }
+
+    // MARK: - Static custom server config
+
+    nonisolated static var staticCustomPreset: LocalServerPreset {
+        let saved = UserDefaults.standard.string(forKey: "custom_preset") ?? LocalServerPreset.ollama.rawValue
+        return LocalServerPreset(rawValue: saved) ?? .ollama
+    }
+
+    nonisolated static var staticCustomBaseURL: String {
+        let saved = UserDefaults.standard.string(forKey: "custom_base_url") ?? ""
+        return saved.isEmpty ? staticCustomPreset.defaultBaseURL : saved
+    }
+
+    nonisolated static var staticCustomModel: String {
+        let saved = UserDefaults.standard.string(forKey: "custom_model") ?? ""
+        return saved.isEmpty ? staticCustomPreset.defaultModel : saved
     }
 }

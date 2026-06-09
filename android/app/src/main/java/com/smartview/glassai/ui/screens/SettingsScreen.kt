@@ -205,10 +205,11 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Cloud,
                     title = stringResource(R.string.settings_provider),
-                    subtitle = if (visionProvider == APIProvider.ALIBABA)
-                        stringResource(R.string.provider_alibaba)
-                    else
-                        stringResource(R.string.provider_openrouter),
+                    subtitle = when (visionProvider) {
+                        APIProvider.ALIBABA -> stringResource(R.string.provider_alibaba)
+                        APIProvider.OPENROUTER -> stringResource(R.string.provider_openrouter)
+                        APIProvider.CUSTOM -> stringResource(R.string.provider_custom)
+                    },
                     onClick = { viewModel.showVisionProviderDialog() }
                 )
 
@@ -226,42 +227,57 @@ fun SettingsScreen(
                     )
                 }
 
+                // Local server config shortcut (only when Custom selected)
+                if (visionProvider == APIProvider.CUSTOM) {
+                    val customURL by viewModel.customBaseURL.collectAsStateValue()
+                    val customModel by viewModel.customModel.collectAsStateValue()
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = AppSpacing.medium))
+                    SettingsItem(
+                        icon = Icons.Default.Dns,
+                        title = stringResource(R.string.settings_custom_title),
+                        subtitle = "$customModel — $customURL",
+                        onClick = { viewModel.showCustomServerDialog() }
+                    )
+                }
+
                 HorizontalDivider(modifier = Modifier.padding(horizontal = AppSpacing.medium))
 
-                // Current Provider API Key
-                val currentKeyTitle = when {
-                    visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.BEIJING ->
-                        stringResource(R.string.apikey_alibaba_beijing)
-                    visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.SINGAPORE ->
-                        stringResource(R.string.apikey_alibaba_singapore)
-                    else -> stringResource(R.string.apikey_openrouter)
-                }
-                val hasCurrentKey = when {
-                    visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.BEIJING -> hasAlibabaBeijingKey
-                    visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.SINGAPORE -> hasAlibabaSingaporeKey
-                    else -> hasOpenRouterKey
-                }
-                SettingsItem(
-                    icon = Icons.Default.Key,
-                    title = currentKeyTitle,
-                    subtitle = if (hasCurrentKey)
-                        stringResource(R.string.settings_apikey_configured)
-                    else
-                        stringResource(R.string.settings_apikey_not_configured),
-                    subtitleColor = if (hasCurrentKey) Success else Error,
-                    onClick = {
-                        val keyType = when {
-                            visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.BEIJING ->
-                                SettingsViewModel.EditingKeyType.ALIBABA_BEIJING
-                            visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.SINGAPORE ->
-                                SettingsViewModel.EditingKeyType.ALIBABA_SINGAPORE
-                            else -> SettingsViewModel.EditingKeyType.OPENROUTER
-                        }
-                        viewModel.showApiKeyDialogForType(keyType)
+                // Current Provider API Key (hidden for Custom — no key required)
+                if (visionProvider != APIProvider.CUSTOM) {
+                    val currentKeyTitle = when {
+                        visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.BEIJING ->
+                            stringResource(R.string.apikey_alibaba_beijing)
+                        visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.SINGAPORE ->
+                            stringResource(R.string.apikey_alibaba_singapore)
+                        else -> stringResource(R.string.apikey_openrouter)
                     }
-                )
+                    val hasCurrentKey = when {
+                        visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.BEIJING -> hasAlibabaBeijingKey
+                        visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.SINGAPORE -> hasAlibabaSingaporeKey
+                        else -> hasOpenRouterKey
+                    }
+                    SettingsItem(
+                        icon = Icons.Default.Key,
+                        title = currentKeyTitle,
+                        subtitle = if (hasCurrentKey)
+                            stringResource(R.string.settings_apikey_configured)
+                        else
+                            stringResource(R.string.settings_apikey_not_configured),
+                        subtitleColor = if (hasCurrentKey) Success else Error,
+                        onClick = {
+                            val keyType = when {
+                                visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.BEIJING ->
+                                    SettingsViewModel.EditingKeyType.ALIBABA_BEIJING
+                                visionProvider == APIProvider.ALIBABA && alibabaEndpoint == AlibabaEndpoint.SINGAPORE ->
+                                    SettingsViewModel.EditingKeyType.ALIBABA_SINGAPORE
+                                else -> SettingsViewModel.EditingKeyType.OPENROUTER
+                            }
+                            viewModel.showApiKeyDialogForType(keyType)
+                        }
+                    )
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AppSpacing.medium))
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = AppSpacing.medium))
+                }
 
                 // Vision Model Selection
                 SettingsItem(
@@ -471,7 +487,8 @@ fun SettingsScreen(
             title = stringResource(R.string.settings_provider),
             options = listOf(
                 APIProvider.ALIBABA to stringResource(R.string.provider_alibaba),
-                APIProvider.OPENROUTER to stringResource(R.string.provider_openrouter)
+                APIProvider.OPENROUTER to stringResource(R.string.provider_openrouter),
+                APIProvider.CUSTOM to stringResource(R.string.provider_custom)
             ),
             selected = visionProvider,
             onSelect = { viewModel.selectVisionProvider(it) },
@@ -604,6 +621,44 @@ fun SettingsScreen(
             onSelect = { viewModel.selectAppLanguage(it) },
             onDismiss = { viewModel.hideAppLanguageDialog() }
         )
+    }
+
+    // Custom Local Server Dialog (full-screen)
+    val showCustomServerDialog by viewModel.showCustomServerDialog.collectAsState()
+    if (showCustomServerDialog) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { viewModel.hideCustomServerDialog() },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(onClick = { viewModel.hideCustomServerDialog() }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                    }
+                    CustomServerSettingsContent(
+                        viewModel = viewModel,
+                        onDismiss = { viewModel.hideCustomServerDialog() }
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var showLiveAISettings = false
     @State private var showLiveTranslateSettings = false
     @State private var showOpenClawSettings = false
+    @State private var showCustomServerSettings = false
     @ObservedObject var quickVisionModeManager = QuickVisionModeManager.shared
     @ObservedObject var liveAIModeManager = LiveAIModeManager.shared
     @State private var selectedModel = "qwen3-omni-flash-realtime"
@@ -181,6 +182,35 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(AppTypography.caption)
                                 .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                    .disabled(providerManager.currentProvider == .custom)
+
+                    // Local server config — only show when custom provider is active
+                    if providerManager.currentProvider == .custom {
+                        Button {
+                            showCustomServerSettings = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "server.rack")
+                                    .foregroundColor(.green)
+                                Text("settings.custom.title".localized)
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(providerManager.customModel)
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textSecondary)
+                                        .lineLimit(1)
+                                    Text(providerManager.customBaseURL)
+                                        .font(.caption2)
+                                        .foregroundColor(AppColors.textTertiary)
+                                        .lineLimit(1)
+                                }
+                                Image(systemName: "chevron.right")
+                                    .font(AppTypography.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
                         }
                     }
 
@@ -354,6 +384,9 @@ struct SettingsView: View {
                     refreshAPIKeyStatus()
                 }
             }
+            .sheet(isPresented: $showCustomServerSettings) {
+                CustomServerSettingsView()
+            }
             .sheet(isPresented: $showProviderSettings) {
                 APIProviderSettingsView()
             }
@@ -482,7 +515,7 @@ struct APIProviderSettingsView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(provider.displayName)
                                         .foregroundColor(.primary)
-                                    Text(provider == .alibaba ? "settings.provider.alibaba.desc".localized : "settings.provider.openrouter.desc".localized)
+                                    Text(providerDescription(provider))
                                         .font(AppTypography.caption)
                                         .foregroundColor(AppColors.textSecondary)
                                 }
@@ -552,16 +585,29 @@ struct APIProviderSettingsView: View {
                         }
                     }
 
-                    Link(destination: URL(string: providerManager.currentProvider.apiKeyHelpURL)!) {
-                        HStack {
-                            Text("settings.provider.getapikey".localized)
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
+                    if providerManager.currentProvider != .custom {
+                        Link(destination: URL(string: providerManager.currentProvider.apiKeyHelpURL)!) {
+                            HStack {
+                                Text("settings.provider.getapikey".localized)
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                            }
+                        }
+                    } else {
+                        // Local server shortcut
+                        Link(destination: URL(string: "https://ollama.com")!) {
+                            HStack {
+                                Text("settings.custom.getstarted".localized)
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                            }
                         }
                     }
                 } header: {
                     if providerManager.currentProvider == .alibaba {
                         Text("\(providerManager.currentProvider.displayName) (\(providerManager.alibabaEndpoint.displayName)) API Key")
+                    } else if providerManager.currentProvider == .custom {
+                        Text("settings.custom.title".localized)
                     } else {
                         Text("\(providerManager.currentProvider.displayName) API Key")
                     }
@@ -576,6 +622,14 @@ struct APIProviderSettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    private func providerDescription(_ provider: APIProvider) -> String {
+        switch provider {
+        case .alibaba: return "settings.provider.alibaba.desc".localized
+        case .openrouter: return "settings.provider.openrouter.desc".localized
+        case .custom: return "settings.provider.custom.desc".localized
         }
     }
 }
@@ -1136,6 +1190,307 @@ struct LiveAIProviderSettingsView: View {
             return "settings.liveai.alibaba.desc".localized
         case .google:
             return "settings.liveai.google.desc".localized
+        }
+    }
+}
+
+// MARK: - Custom Local Server Settings
+//
+// Permet de configurer un serveur IA local (Ollama, llama.cpp, LM Studio, vLLM, etc.)
+// qui expose un endpoint compatible OpenAI (/v1/chat/completions).
+
+struct CustomServerSettingsView: View {
+    @ObservedObject var providerManager = APIProviderManager.shared
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var baseURL: String = ""
+    @State private var modelName: String = ""
+    @State private var apiKey: String = ""
+    @State private var preset: LocalServerPreset = .ollama
+
+    @State private var testResult: TestResult? = nil
+    @State private var isTesting = false
+    @State private var showSaveSuccess = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+
+    enum TestResult {
+        case success(models: [String])
+        case failure(String)
+    }
+
+    var body: some View {
+        NavigationView {
+            Form {
+                // 1) Preset
+                Section {
+                    ForEach(LocalServerPreset.allCases, id: \.self) { p in
+                        Button {
+                            preset = p
+                            applyPresetDefaults(p, updateURL: true, updateModel: true)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(p.displayName)
+                                        .foregroundColor(.primary)
+                                    Text(presetDescription(p))
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                                Spacer()
+                                if preset == p {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("settings.custom.preset".localized)
+                } footer: {
+                    Text("settings.custom.preset.description".localized)
+                }
+
+                // 2) URL & model
+                Section {
+                    HStack {
+                        Image(systemName: "network")
+                            .foregroundColor(AppColors.accent)
+                        TextField("settings.custom.url.placeholder".localized, text: $baseURL)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .font(.system(.body, design: .monospaced))
+                    }
+
+                    HStack {
+                        Image(systemName: "cpu")
+                            .foregroundColor(AppColors.accent)
+                        TextField("settings.custom.model.placeholder".localized, text: $modelName)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .font(.system(.body, design: .monospaced))
+                    }
+                } header: {
+                    Text("settings.custom.connection".localized)
+                } footer: {
+                    Text("settings.custom.connection.description".localized)
+                }
+
+                // 3) API key (optional)
+                Section {
+                    HStack {
+                        Image(systemName: "key.fill")
+                            .foregroundColor(AppColors.wordLearn)
+                        SecureField("settings.custom.apikey.placeholder".localized, text: $apiKey)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                } header: {
+                    Text("settings.custom.apikey".localized)
+                } footer: {
+                    Text("settings.custom.apikey.description".localized)
+                }
+
+                // 4) Test + save
+                Section {
+                    Button {
+                        Task { await testConnection() }
+                    } label: {
+                        HStack {
+                            if isTesting {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "antenna.radiowaves.left.and.right")
+                            }
+                            Text(isTesting ? "settings.custom.testing".localized : "settings.custom.test".localized)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(isTesting || baseURL.isEmpty)
+
+                    if let result = testResult {
+                        switch result {
+                        case .success(let models):
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("settings.custom.test.success".localized)
+                                        .foregroundColor(.green)
+                                    if !models.isEmpty {
+                                        Text("settings.custom.test.models".localized)
+                                            .font(AppTypography.caption)
+                                            .foregroundColor(AppColors.textSecondary)
+                                        ForEach(models.prefix(8), id: \.self) { m in
+                                            Text("• \(m)")
+                                                .font(.system(.caption, design: .monospaced))
+                                                .foregroundColor(AppColors.textPrimary)
+                                        }
+                                        if models.count > 8 {
+                                            Text("+\(models.count - 8) autres…")
+                                                .font(.caption2)
+                                                .foregroundColor(AppColors.textSecondary)
+                                        }
+                                    }
+                                }
+                            }
+                        case .failure(let msg):
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.red)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("settings.custom.test.failure".localized)
+                                        .foregroundColor(.red)
+                                    Text(msg)
+                                        .font(AppTypography.caption)
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                            }
+                        }
+                    }
+
+                    Button {
+                        saveConfig()
+                    } label: {
+                        Text("save".localized)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(baseURL.isEmpty || modelName.isEmpty)
+                }
+            }
+            .navigationTitle("settings.custom.title".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("done".localized) {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("settings.custom.saved".localized, isPresented: $showSaveSuccess) {
+                Button("ok".localized) {
+                    dismiss()
+                }
+            } message: {
+                Text("settings.custom.saved.message".localized)
+            }
+            .alert("error".localized, isPresented: $showError) {
+                Button("ok".localized) {}
+            } message: {
+                Text(errorMessage)
+            }
+            .onAppear {
+                loadCurrentConfig()
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func loadCurrentConfig() {
+        preset = providerManager.customPreset
+        baseURL = providerManager.customBaseURL
+        modelName = providerManager.customModel
+        apiKey = providerManager.getCustomAPIKey()
+    }
+
+    private func applyPresetDefaults(_ p: LocalServerPreset, updateURL: Bool, updateModel: Bool) {
+        if updateURL, !p.defaultBaseURL.isEmpty {
+            baseURL = p.defaultBaseURL
+        }
+        if updateModel, !p.defaultModel.isEmpty {
+            modelName = p.defaultModel
+        }
+    }
+
+    private func presetDescription(_ p: LocalServerPreset) -> String {
+        switch p {
+        case .ollama: return "settings.custom.preset.ollama.desc".localized
+        case .llamacpp: return "settings.custom.preset.llamacpp.desc".localized
+        case .lmstudio: return "settings.custom.preset.lmstudio.desc".localized
+        case .vllm: return "settings.custom.preset.vllm.desc".localized
+        case .custom: return "settings.custom.preset.custom.desc".localized
+        }
+    }
+
+    private func saveConfig() {
+        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedModel = modelName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedURL.isEmpty, !trimmedModel.isEmpty else {
+            errorMessage = "settings.custom.empty".localized
+            showError = true
+            return
+        }
+
+        // Normalise l'URL : enlever le / final et s'assurer qu'elle finit par /v1
+        var normalized = trimmedURL
+        while normalized.hasSuffix("/") { normalized.removeLast() }
+        if !normalized.hasSuffix("/v1") {
+            normalized += "/v1"
+        }
+
+        providerManager.customPreset = preset
+        providerManager.customBaseURL = normalized
+        providerManager.customModel = trimmedModel
+        providerManager.setCustomAPIKey(apiKey)
+        // Si l'utilisateur est sur le provider custom, basculer la sélection du modèle
+        if providerManager.currentProvider == .custom {
+            providerManager.selectedModel = trimmedModel
+        }
+
+        showSaveSuccess = true
+    }
+
+    /// Teste la connexion en interrogeant /v1/models (compatibilité OpenAI).
+    /// Ollama, llama.cpp server, LM Studio, vLLM exposent tous cette route.
+    private func testConnection() async {
+        isTesting = true
+        testResult = nil
+        defer { isTesting = false }
+
+        var normalized = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        while normalized.hasSuffix("/") { normalized.removeLast() }
+        if !normalized.hasSuffix("/v1") {
+            normalized += "/v1"
+        }
+
+        guard let url = URL(string: "\(normalized)/models") else {
+            testResult = .failure("URL invalide")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 8
+        if !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                testResult = .failure("Réponse invalide du serveur")
+                return
+            }
+            if http.statusCode != 200 {
+                let body = String(data: data, encoding: .utf8) ?? ""
+                testResult = .failure("HTTP \(http.statusCode) — \(body.prefix(200))")
+                return
+            }
+
+            // Parse la réponse OpenAI-compatible: { "data": [{ "id": "..." }] }
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let dataArr = json["data"] as? [[String: Any]] {
+                let modelIds = dataArr.compactMap { $0["id"] as? String }
+                testResult = .success(models: modelIds)
+            } else {
+                testResult = .success(models: [])
+            }
+        } catch {
+            testResult = .failure(error.localizedDescription)
         }
     }
 }

@@ -148,7 +148,34 @@
 "settings.provider.description" = "选择用于 AI 识图的 API 服务提供商";
 "settings.provider.alibaba.desc" = "阿里云通义千问视觉模型";
 "settings.provider.openrouter.desc" = "统一接口，500+ AI 模型";
+"settings.provider.custom.desc" = "本地 OpenAI 兼容服务（Ollama、llama.cpp、LM Studio、vLLM…）";
 "settings.provider.getapikey" = "获取 API Key";
+
+// Custom / Local Server Settings
+"settings.custom.title" = "本地服务器";
+"settings.custom.preset" = "服务器类型";
+"settings.custom.preset.description" = "选择预设以自动填写 URL 和模型名称，下方仍可手动修改。";
+"settings.custom.preset.ollama.desc" = "Ollama（默认：http://localhost:11434/v1）";
+"settings.custom.preset.llamacpp.desc" = "llama.cpp server（默认：http://localhost:8080/v1）";
+"settings.custom.preset.lmstudio.desc" = "LM Studio（默认：http://localhost:1234/v1）";
+"settings.custom.preset.vllm.desc" = "vLLM（默认：http://localhost:8000/v1）";
+"settings.custom.preset.custom.desc" = "手动填写 Base URL 和模型名称";
+"settings.custom.connection" = "连接设置";
+"settings.custom.connection.description" = "服务器的 OpenAI 兼容端点地址和模型名称。若 URL 未以 /v1 结尾会自动补全。";
+"settings.custom.url.placeholder" = "Base URL（例如 http://192.168.1.10:11434/v1）";
+"settings.custom.model.placeholder" = "模型名称（例如 llava、llama3.2-vision）";
+"settings.custom.apikey" = "API Key（可选）";
+"settings.custom.apikey.placeholder" = "服务器无需鉴权请留空";
+"settings.custom.apikey.description" = "大多数本地服务无需 API Key，部分部署（反向代理、vLLM）可能要求。";
+"settings.custom.test" = "测试连接";
+"settings.custom.testing" = "测试中…";
+"settings.custom.test.success" = "连接成功";
+"settings.custom.test.failure" = "连接失败";
+"settings.custom.test.models" = "服务器上可用的模型：";
+"settings.custom.saved" = "已保存";
+"settings.custom.saved.message" = "本地服务器配置已生效。";
+"settings.custom.empty" = "URL 和模型名称不能为空";
+"settings.custom.getstarted" = "开始使用 Ollama（推荐）";
 
 // Model Settings
 "settings.model" = "模型设置";

@@ -382,4 +382,22 @@
     <string name="prompt_liveai_blind">You are an AI assistant for visually impaired users wearing smart glasses.\n\n[IMPORTANT] Always respond in English.\n\nYour task is to help users understand their surroundings:\n1. Describe objects, people, and environment in detail\n2. Use clear directional words (ahead, left, behind right, etc.)\n3. Point out obstacles or dangers\n4. Read signs, menus, and other text\n5. Provide safe, practical navigation advice\n\nSpeak clearly and prioritize the most important information.</string>
     <string name="prompt_liveai_reading">You are a reading assistant AI.\n\n[IMPORTANT] Always respond in English.\n\nYour task is to help users read visible text:\n1. Accurately recognize and read all visible text\n2. Organize content in correct reading order\n3. For documents, explain the structure\n4. For foreign languages, read first then translate\n\nSpeak at moderate pace, clearly, like a professional reader.</string>
     <string name="prompt_liveai_translate">You are a real-time translation AI assistant.\n\n[IMPORTANT] Translation results must be in {LANGUAGE}.\n\nYour task is to help users understand foreign language content:\n1. Recognize text in the image\n2. Translate to {LANGUAGE}\n3. For menus or signs, explain their purpose\n4. Provide simple explanations for technical terms\n\nTranslations should be accurate, natural, and idiomatic.</string>
+
+    <!-- Custom / Local Server Settings -->
+    <string name="provider_custom">Local Server (OpenAI-compatible)</string>
+    <string name="settings_custom_title">Local Server</string>
+    <string name="settings_custom_description">Configure a local AI server (Ollama, llama.cpp, LM Studio, vLLM…) that exposes an OpenAI-compatible endpoint.</string>
+    <string name="settings_custom_preset">Server Type</string>
+    <string name="settings_custom_preset_description">Pick a preset to prefill the URL and model name. You can fine-tune both below.</string>
+    <string name="settings_custom_connection">Connection</string>
+    <string name="settings_custom_url_hint">Base URL</string>
+    <string name="settings_custom_model_hint">Model name</string>
+    <string name="settings_custom_apikey_hint">API Key (optional)</string>
+    <string name="settings_custom_apikey_placeholder">Leave empty if your server doesn\'t require auth</string>
+    <string name="settings_custom_test">Test connection</string>
+    <string name="settings_custom_testing">Testing…</string>
+    <string name="settings_custom_test_success">Connection successful</string>
+    <string name="settings_custom_test_failure">Connection failed</string>
+    <string name="settings_custom_test_models">Models available on this server:</string>
+    <string name="settings_custom_test_more">more</string>
 </resources>

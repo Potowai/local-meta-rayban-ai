@@ -4,8 +4,11 @@ import android.graphics.Bitmap
 import android.util.Base64
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.smartview.glassai.managers.APIProvider
+import com.smartview.glassai.managers.APIProviderManager
 import com.smartview.glassai.models.FoodItem
 import com.smartview.glassai.models.FoodNutritionResponse
+import com.smartview.glassai.utils.APIKeyManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -15,7 +18,14 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
-class LeanEatService(private val apiKey: String) {
+/**
+ * 食物营养分析AI服务
+ * Supports all vision providers including local OpenAI-compatible servers
+ */
+class LeanEatService(
+    private val apiKey: String,
+    private val providerManager: APIProviderManager? = null
+) {
 
     companion object {
         private const val BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
@@ -34,7 +44,7 @@ class LeanEatService(private val apiKey: String) {
       "protein": 蛋白质克数(小数),
       "fat": 脂肪克数(小数),
       "carbs": 碳水化合物克数(小数),
-      "fiber": 膳食纤维克数(小数或null),
+      "fiber": 膳食纤维(小数或null),
       "sugar": 糖克数(小数或null),
       "healthRating": "优秀/良好/一般/较差"
     }
@@ -65,15 +75,36 @@ class LeanEatService(private val apiKey: String) {
 
     private val gson = Gson()
 
+    // Effective URL & model — fall back to the historical Alibaba defaults when
+    // no providerManager is supplied (legacy callers passing only an API key).
+    private val effectiveBaseURL: String
+        get() {
+            val pm = providerManager ?: return BASE_URL.substringBefore("/chat/completions")
+            return when (pm.currentProvider.value) {
+                APIProvider.CUSTOM -> pm.customBaseURL.value
+                else -> pm.currentBaseURL
+            }
+        }
+
+    private val effectiveModel: String
+        get() = providerManager?.currentModel ?: MODEL
+
     suspend fun analyzeFood(image: Bitmap): Result<FoodNutritionResponse> = withContext(Dispatchers.IO) {
         try {
             val base64Image = encodeImageToBase64(image)
             val requestBody = buildRequestBody(base64Image)
+            val url = "$effectiveBaseURL/chat/completions"
 
-            val request = Request.Builder()
-                .url(BASE_URL)
-                .addHeader("Authorization", "Bearer $apiKey")
+            val requestBuilder = Request.Builder()
+                .url(url)
                 .addHeader("Content-Type", "application/json")
+
+            // Authorization is optional for local servers (e.g. Ollama)
+            if (apiKey.isNotBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer $apiKey")
+            }
+
+            val request = requestBuilder
                 .post(requestBody.toRequestBody("application/json".toMediaType()))
                 .build()
 
@@ -126,7 +157,7 @@ class LeanEatService(private val apiKey: String) {
         )
 
         val request = mapOf(
-            "model" to MODEL,
+            "model" to effectiveModel,
             "messages" to messages,
             "max_tokens" to 2000
         )

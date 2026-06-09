@@ -14,9 +14,63 @@ import java.util.concurrent.TimeUnit
 
 /**
  * API Provider Manager
- * 管理不同的 API 提供商 (阿里云 Dashscope / OpenRouter / Google)
+ * 管理不同的 API 提供商 (阿里云 Dashscope / OpenRouter / 本地 OpenAI 兼容服务)
  * 1:1 port from iOS APIProviderManager.swift
  */
+
+// MARK: - Local Server Presets (for quick setup)
+
+/**
+ * Built-in presets: default base URLs and model names for common local AI servers.
+ */
+enum class LocalServerPreset(val id: String) {
+    OLLAMA("ollama"),
+    LLAMACPP("llamacpp"),
+    LMSTUDIO("lmstudio"),
+    VLLM("vllm"),
+    CUSTOM("custom");
+
+    val displayName: String
+        get() = when (this) {
+            OLLAMA -> "Ollama"
+            LLAMACPP -> "llama.cpp"
+            LMSTUDIO -> "LM Studio"
+            VLLM -> "vLLM"
+            CUSTOM -> "Custom"
+        }
+
+    /** Default Base URL (OpenAI-compatible endpoint) */
+    val defaultBaseURL: String
+        get() = when (this) {
+            OLLAMA -> "http://localhost:11434/v1"
+            LLAMACPP -> "http://localhost:8080/v1"
+            LMSTUDIO -> "http://localhost:1234/v1"
+            VLLM -> "http://localhost:8000/v1"
+            CUSTOM -> ""
+        }
+
+    val defaultModel: String
+        get() = when (this) {
+            OLLAMA -> "llava"
+            LLAMACPP -> "local"
+            LMSTUDIO -> "local-model"
+            VLLM -> "local-model"
+            CUSTOM -> ""
+        }
+
+    val helpURL: String?
+        get() = when (this) {
+            OLLAMA -> "https://github.com/ollama/ollama"
+            LLAMACPP -> "https://github.com/ggerganov/llama.cpp"
+            LMSTUDIO -> "https://lmstudio.ai/"
+            VLLM -> "https://github.com/vllm-project/vllm"
+            CUSTOM -> null
+        }
+
+    companion object {
+        fun fromId(id: String?): LocalServerPreset = entries.find { it.id == id } ?: OLLAMA
+    }
+}
 
 // MARK: - Alibaba Endpoint Enum
 
@@ -59,24 +113,28 @@ enum class AlibabaEndpoint(val id: String) {
 
 enum class APIProvider(val id: String) {
     ALIBABA("alibaba"),
-    OPENROUTER("openrouter");
+    OPENROUTER("openrouter"),
+    CUSTOM("custom");   // Local OpenAI-compatible server (Ollama, llama.cpp, LM Studio...)
 
     val displayName: String
         get() = when (this) {
             ALIBABA -> "阿里云 Dashscope"
             OPENROUTER -> "OpenRouter"
+            CUSTOM -> "Local Server (OpenAI-compatible)"
         }
 
     val displayNameEn: String
         get() = when (this) {
             ALIBABA -> "Alibaba Dashscope"
             OPENROUTER -> "OpenRouter"
+            CUSTOM -> "Local Server (OpenAI-compatible)"
         }
 
     fun baseURL(endpoint: AlibabaEndpoint = AlibabaEndpoint.BEIJING): String {
         return when (this) {
             ALIBABA -> endpoint.baseURL
             OPENROUTER -> "https://openrouter.ai/api/v1"
+            CUSTOM -> APIProviderManager.staticCustomBaseURL
         }
     }
 
@@ -84,16 +142,25 @@ enum class APIProvider(val id: String) {
         get() = when (this) {
             ALIBABA -> "qwen-vl-flash"
             OPENROUTER -> "google/gemini-2.0-flash-001"
+            CUSTOM -> APIProviderManager.staticCustomModel
         }
 
     val apiKeyHelpURL: String
         get() = when (this) {
             ALIBABA -> "https://help.aliyun.com/zh/model-studio/get-api-key"
             OPENROUTER -> "https://openrouter.ai/keys"
+            CUSTOM -> "https://github.com/ollama/ollama/blob/main/docs/api.md"
         }
 
     val supportsVision: Boolean
         get() = true
+
+    /** Local servers don't require an API key (the user may still set one if their server enforces auth) */
+    val requiresAPIKey: Boolean
+        get() = when (this) {
+            ALIBABA, OPENROUTER -> true
+            CUSTOM -> false
+        }
 
     companion object {
         fun fromId(id: String): APIProvider {
@@ -243,6 +310,10 @@ class APIProviderManager private constructor(context: Context) {
         private const val KEY_ALIBABA_ENDPOINT = "alibaba_endpoint"
         private const val KEY_LIVE_AI_PROVIDER = "liveai_provider"
         private const val KEY_LIVE_AI_MODEL = "liveai_model"
+        // Local / Custom server config
+        private const val KEY_CUSTOM_PRESET = "custom_preset"
+        private const val KEY_CUSTOM_BASE_URL = "custom_base_url"
+        private const val KEY_CUSTOM_MODEL = "custom_model"
 
         @Volatile
         private var instance: APIProviderManager? = null
@@ -276,12 +347,33 @@ class APIProviderManager private constructor(context: Context) {
 
         val staticCurrentModel: String
             get() {
+                if (staticCurrentProvider == APIProvider.CUSTOM) {
+                    return staticCustomModel
+                }
                 return prefs?.getString(KEY_SELECTED_MODEL, null)
                     ?: staticCurrentProvider.defaultModel
             }
 
         val staticBaseURL: String
-            get() = staticCurrentProvider.baseURL(staticAlibabaEndpoint)
+            get() = if (staticCurrentProvider == APIProvider.CUSTOM) {
+                staticCustomBaseURL
+            } else {
+                staticCurrentProvider.baseURL(staticAlibabaEndpoint)
+            }
+
+        // MARK: - Static custom server config
+        val staticCustomPreset: LocalServerPreset
+            get() = LocalServerPreset.fromId(prefs?.getString(KEY_CUSTOM_PRESET, null))
+
+        val staticCustomBaseURL: String
+            get() = prefs?.getString(KEY_CUSTOM_BASE_URL, null)
+                ?.takeIf { it.isNotBlank() }
+                ?: staticCustomPreset.defaultBaseURL
+
+        val staticCustomModel: String
+            get() = prefs?.getString(KEY_CUSTOM_MODEL, null)
+                ?.takeIf { it.isNotBlank() }
+                ?: staticCustomPreset.defaultModel
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -323,6 +415,27 @@ class APIProviderManager private constructor(context: Context) {
         prefs.getString(KEY_LIVE_AI_MODEL, null) ?: LiveAIProvider.ALIBABA.defaultModel
     )
     val liveAIModel: StateFlow<String> = _liveAIModel
+
+    // MARK: - Local server (custom provider) configuration
+
+    private val _customPreset = MutableStateFlow(
+        LocalServerPreset.fromId(prefs.getString(KEY_CUSTOM_PRESET, null))
+    )
+    val customPreset: StateFlow<LocalServerPreset> = _customPreset
+
+    private val _customBaseURL = MutableStateFlow(
+        prefs.getString(KEY_CUSTOM_BASE_URL, null)
+            ?.takeIf { it.isNotBlank() }
+            ?: LocalServerPreset.OLLAMA.defaultBaseURL
+    )
+    val customBaseURL: StateFlow<String> = _customBaseURL
+
+    private val _customModel = MutableStateFlow(
+        prefs.getString(KEY_CUSTOM_MODEL, null)
+            ?.takeIf { it.isNotBlank() }
+            ?: LocalServerPreset.OLLAMA.defaultModel
+    )
+    val customModel: StateFlow<String> = _customModel
 
     // OpenRouter Models
     private val _openRouterModels = MutableStateFlow<List<OpenRouterModel>>(emptyList())
@@ -372,6 +485,34 @@ class APIProviderManager private constructor(context: Context) {
         prefs.edit().putString(KEY_LIVE_AI_MODEL, model).apply()
     }
 
+    // MARK: - Local server (custom provider) setters
+
+    fun setCustomPreset(preset: LocalServerPreset) {
+        val oldValue = _customPreset.value
+        _customPreset.value = preset
+        prefs.edit().putString(KEY_CUSTOM_PRESET, preset.id).apply()
+
+        // Auto-fill URL & model when switching preset (skip for the "custom" preset)
+        if (oldValue != preset && preset != LocalServerPreset.CUSTOM) {
+            if (_customBaseURL.value.isBlank()) {
+                setCustomBaseURL(preset.defaultBaseURL)
+            }
+            if (_customModel.value.isBlank()) {
+                setCustomModel(preset.defaultModel)
+            }
+        }
+    }
+
+    fun setCustomBaseURL(url: String) {
+        _customBaseURL.value = url
+        prefs.edit().putString(KEY_CUSTOM_BASE_URL, url).apply()
+    }
+
+    fun setCustomModel(model: String) {
+        _customModel.value = model
+        prefs.edit().putString(KEY_CUSTOM_MODEL, model).apply()
+    }
+
     // MARK: - Live AI Configuration
 
     val liveAIWebSocketURL: String
@@ -391,24 +532,35 @@ class APIProviderManager private constructor(context: Context) {
     // MARK: - Get Current Configuration
 
     val currentBaseURL: String
-        get() = _currentProvider.value.baseURL(_alibabaEndpoint.value)
+        get() = if (_currentProvider.value == APIProvider.CUSTOM) {
+            _customBaseURL.value
+        } else {
+            _currentProvider.value.baseURL(_alibabaEndpoint.value)
+        }
 
     fun getCurrentAPIKey(apiKeyManager: com.smartview.glassai.utils.APIKeyManager): String {
-        return if (_currentProvider.value == APIProvider.ALIBABA) {
-            apiKeyManager.getAPIKey(_currentProvider.value, _alibabaEndpoint.value) ?: ""
-        } else {
-            apiKeyManager.getAPIKey(_currentProvider.value) ?: ""
+        return when (_currentProvider.value) {
+            APIProvider.ALIBABA -> apiKeyManager.getAPIKey(_currentProvider.value, _alibabaEndpoint.value) ?: ""
+            APIProvider.OPENROUTER -> apiKeyManager.getAPIKey(_currentProvider.value) ?: ""
+            APIProvider.CUSTOM -> apiKeyManager.getCustomAPIKey() ?: ""
         }
     }
 
     val currentModel: String
-        get() = _selectedModel.value
+        get() = if (_currentProvider.value == APIProvider.CUSTOM) {
+            _customModel.value
+        } else {
+            _selectedModel.value
+        }
 
     fun hasAPIKey(apiKeyManager: com.smartview.glassai.utils.APIKeyManager): Boolean {
-        return if (_currentProvider.value == APIProvider.ALIBABA) {
-            apiKeyManager.hasAPIKey(_currentProvider.value, _alibabaEndpoint.value)
-        } else {
-            apiKeyManager.hasAPIKey(_currentProvider.value)
+        return when (_currentProvider.value) {
+            APIProvider.ALIBABA -> apiKeyManager.hasAPIKey(_currentProvider.value, _alibabaEndpoint.value)
+            APIProvider.OPENROUTER -> apiKeyManager.hasAPIKey(_currentProvider.value)
+            APIProvider.CUSTOM -> {
+                // The custom provider is "ready" as soon as URL and model are configured
+                _customBaseURL.value.isNotBlank() && _customModel.value.isNotBlank()
+            }
         }
     }
 

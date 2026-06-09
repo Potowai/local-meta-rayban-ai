@@ -8,6 +8,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.smartview.glassai.managers.APIProvider
+import com.smartview.glassai.managers.APIProviderManager
 import com.smartview.glassai.models.FoodNutritionResponse
 import com.smartview.glassai.services.LeanEatService
 import com.smartview.glassai.utils.APIKeyManager
@@ -20,6 +22,7 @@ import java.io.IOException
 class LeanEatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val apiKeyManager = APIKeyManager.getInstance(application)
+    private val providerManager = APIProviderManager.getInstance(application)
     private var leanEatService: LeanEatService? = null
 
     // State
@@ -51,9 +54,11 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun initializeService() {
-        val apiKey = apiKeyManager.getAPIKey()
-        if (!apiKey.isNullOrBlank()) {
-            leanEatService = LeanEatService(apiKey)
+        val apiKey = apiKeyManager.getAPIKey() ?: ""
+        // For local providers (no API key required) or when one is configured,
+        // we can always instantiate the service.
+        if (apiKey.isNotBlank() || providerManager.currentProvider.value == APIProvider.CUSTOM) {
+            leanEatService = LeanEatService(apiKey, providerManager)
         }
     }
 
@@ -71,13 +76,14 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
         }
 
         if (leanEatService == null) {
-            val apiKey = apiKeyManager.getAPIKey()
-            if (apiKey.isNullOrBlank()) {
+            val apiKey = apiKeyManager.getAPIKey() ?: ""
+            val isCustom = providerManager.currentProvider.value == APIProvider.CUSTOM
+            if (apiKey.isBlank() && !isCustom) {
                 _errorMessage.value = "API Key not configured"
                 _viewState.value = ViewState.Error("API Key not configured")
                 return
             }
-            leanEatService = LeanEatService(apiKey)
+            leanEatService = LeanEatService(apiKey, providerManager)
         }
 
         viewModelScope.launch {

@@ -179,6 +179,40 @@ Before using TurboMeta, you **MUST** enable DAT SDK Preview Mode in Meta View Ap
 4. Grant permissions (Bluetooth, Microphone)
 5. Configure API Key in Settings 👉 [See Configuration Guide](#api-key-config)
 
+### 🖥️ Use a Local AI Server (Ollama, llama.cpp, LM Studio, vLLM…)
+
+The Android app can route vision queries to any local server that exposes an
+**OpenAI-compatible** `/v1/chat/completions` endpoint — no cloud account needed,
+no data leaves your device/network.
+
+1. Run your server. For example with [Ollama](https://ollama.com):
+   ```bash
+   ollama serve                       # default: http://localhost:11434
+   ollama pull llava                  # or any vision-capable model
+   ```
+   Or with [llama.cpp](https://github.com/ggerganov/llama.cpp) server, LM Studio,
+   vLLM, LocalAI, etc.
+2. Make sure the phone can reach it:
+   - **Phone same machine as server** → use `http://localhost:11434/v1` (works
+     via the `10.0.2.2` mapping on emulator, or the `localhost` mapping when
+     running on a rooted phone + reverse-tether).
+   - **Phone on the same Wi-Fi as the server** → use the server's LAN IP
+     (e.g. `http://192.168.1.42:11434/v1`).
+   - **Termux on the same phone** → start the server inside Termux and use
+     `http://127.0.0.1:11434/v1`.
+3. In the app: **Settings → Vision API Provider → Local Server (OpenAI-compatible)**.
+4. Pick a preset (Ollama / llama.cpp / LM Studio / vLLM) to auto-fill the URL
+   and model name, or pick **Custom** to type your own.
+5. Tap **Test connection** — the app will call `GET /v1/models` and list the
+   models your server reports. If you see them, you're good.
+6. Save. The API Key field is optional; leave it empty unless your server
+   enforces auth.
+
+The app uses the same `/v1/chat/completions` shape OpenAI uses, so any server
+that speaks that dialect works. Cleartext HTTP is allowed only to local-network
+hosts (`localhost`, `127.0.0.1`, `10.0.2.2`, and the common private LAN
+ranges) — see `android/app/src/main/res/xml/network_security_config.xml`.
+
 ---
 
 ## 📖 Introduction

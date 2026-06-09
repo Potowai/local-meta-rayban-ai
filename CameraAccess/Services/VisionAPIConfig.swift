@@ -1,7 +1,7 @@
 /*
  * Vision API Configuration
  * Centralized configuration for Vision API
- * Supports multiple providers: Alibaba Cloud Dashscope, OpenRouter
+ * Supports multiple providers: Alibaba Cloud Dashscope, OpenRouter, local OpenAI-compatible
  */
 
 import Foundation
@@ -48,9 +48,13 @@ struct VisionAPIConfig {
     /// Get headers for the current provider
     static func headers(with apiKey: String) -> [String: String] {
         var headers = [
-            "Content-Type": "application/json",
-            "Authorization": "Bearer \(apiKey)"
+            "Content-Type": "application/json"
         ]
+
+        // Authorization header (optional for local servers)
+        if !apiKey.isEmpty {
+            headers["Authorization"] = "Bearer \(apiKey)"
+        }
 
         // Add OpenRouter-specific headers
         if provider == .openrouter {

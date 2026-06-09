@@ -11,6 +11,7 @@ import com.smartview.glassai.managers.APIProviderManager
 import com.smartview.glassai.managers.AppLanguage
 import com.smartview.glassai.managers.LanguageManager
 import com.smartview.glassai.managers.LiveAIProvider
+import com.smartview.glassai.managers.LocalServerPreset
 import com.smartview.glassai.managers.OpenRouterModel
 import com.smartview.glassai.utils.AIModel
 import com.smartview.glassai.utils.APIKeyManager
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * SettingsViewModel
@@ -127,6 +129,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val openRouterModels: StateFlow<List<OpenRouterModel>> = providerManager.openRouterModels
     val isLoadingModels: StateFlow<Boolean> = providerManager.isLoadingModels
     val modelsError: StateFlow<String?> = providerManager.modelsError
+
+    // Local / Custom server config
+    val customPreset: StateFlow<LocalServerPreset> = providerManager.customPreset
+    val customBaseURL: StateFlow<String> = providerManager.customBaseURL
+    val customModel: StateFlow<String> = providerManager.customModel
+
+    // Custom server dialog state
+    private val _showCustomServerDialog = MutableStateFlow(false)
+    val showCustomServerDialog: StateFlow<Boolean> = _showCustomServerDialog.asStateFlow()
 
     // Current editing key type
     private val _editingKeyType = MutableStateFlow<EditingKeyType?>(null)
@@ -418,6 +429,99 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             providerManager.fetchOpenRouterModels(apiKeyManager)
         }
+    }
+
+    // MARK: - Custom Local Server
+
+    fun showCustomServerDialog() {
+        _showCustomServerDialog.value = true
+    }
+
+    fun hideCustomServerDialog() {
+        _showCustomServerDialog.value = false
+    }
+
+    fun saveCustomServerConfig(
+        preset: LocalServerPreset,
+        baseURL: String,
+        model: String,
+        apiKey: String
+    ): Boolean {
+        val trimmedURL = baseURL.trim()
+        val trimmedModel = model.trim()
+
+        if (trimmedURL.isBlank() || trimmedModel.isBlank()) {
+            _message.value = "URL and model name are required"
+            return false
+        }
+
+        // Normalize URL: strip trailing slash and ensure /v1 suffix
+        var normalized = trimmedURL.trimEnd('/')
+        if (!normalized.endsWith("/v1")) {
+            normalized += "/v1"
+        }
+
+        providerManager.setCustomPreset(preset)
+        providerManager.setCustomBaseURL(normalized)
+        providerManager.setCustomModel(trimmedModel)
+        apiKeyManager.saveCustomAPIKey(apiKey)
+
+        // If the user is on the custom provider, update the selected vision model too
+        if (providerManager.currentProvider.value == APIProvider.CUSTOM) {
+            providerManager.setSelectedModel(trimmedModel)
+        }
+
+        refreshApiKeyStatus()
+        _message.value = "Local server configured"
+        _showCustomServerDialog.value = false
+        return true
+    }
+
+    /** Quick check that the local server is reachable and lists its models. */
+    suspend fun testCustomServerConnection(
+        baseURL: String,
+        apiKey: String
+    ): TestConnectionResult = withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            var normalized = baseURL.trim().trimEnd('/')
+            if (!normalized.endsWith("/v1")) {
+                normalized += "/v1"
+            }
+            val request = okhttp3.Request.Builder()
+                .url("$normalized/models")
+                .get()
+            if (apiKey.isNotBlank()) {
+                request.addHeader("Authorization", "Bearer $apiKey")
+            }
+            val response = okhttp3.OkHttpClient.Builder()
+                .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+                .newCall(request.build())
+                .execute()
+            if (!response.isSuccessful) {
+                val body = response.body?.string()?.take(200) ?: ""
+                return@withContext TestConnectionResult.Failure("HTTP ${response.code} — $body")
+            }
+            val body = response.body?.string() ?: return@withContext TestConnectionResult.Success(emptyList())
+            try {
+                val json = org.json.JSONObject(body)
+                val data = json.optJSONArray("data") ?: return@withContext TestConnectionResult.Success(emptyList())
+                val models = (0 until data.length()).mapNotNull { i ->
+                    data.optJSONObject(i)?.optString("id")?.takeIf { it.isNotBlank() }
+                }
+                TestConnectionResult.Success(models)
+            } catch (e: Exception) {
+                TestConnectionResult.Failure("Invalid JSON: ${e.message}")
+            }
+        } catch (e: Exception) {
+            TestConnectionResult.Failure(e.message ?: "Connection failed")
+        }
+    }
+
+    sealed class TestConnectionResult {
+        data class Success(val models: List<String>) : TestConnectionResult()
+        data class Failure(val message: String) : TestConnectionResult()
     }
 
     fun searchOpenRouterModels(query: String): List<OpenRouterModel> {

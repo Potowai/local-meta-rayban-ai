@@ -25,6 +25,7 @@ class APIKeyManager(context: Context) {
         private const val KEY_ALIBABA_SINGAPORE = "alibaba-singapore-api-key"
         private const val KEY_OPENROUTER = "openrouter-api-key"
         private const val KEY_GOOGLE = "google-api-key"
+        private const val KEY_CUSTOM = "custom-api-key"  // For local OpenAI-compatible servers (optional)
         private const val KEY_LEGACY = "qwen_api_key" // For backward compatibility
 
         // Settings keys
@@ -152,6 +153,43 @@ class APIKeyManager(context: Context) {
         return !getGoogleAPIKey().isNullOrBlank()
     }
 
+    // MARK: - Custom API Key (for local OpenAI-compatible servers, optional)
+
+    fun saveCustomAPIKey(key: String): Boolean {
+        return try {
+            // Empty key is allowed (most local servers don't require auth) — but we still
+            // store the value so hasCustomAPIKey reflects the user's intent.
+            sharedPreferences.edit().putString(KEY_CUSTOM, key).apply()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save custom API key: ${e.message}")
+            false
+        }
+    }
+
+    fun getCustomAPIKey(): String? {
+        return try {
+            sharedPreferences.getString(KEY_CUSTOM, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get custom API key: ${e.message}")
+            null
+        }
+    }
+
+    fun deleteCustomAPIKey(): Boolean {
+        return try {
+            sharedPreferences.edit().remove(KEY_CUSTOM).apply()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete custom API key: ${e.message}")
+            false
+        }
+    }
+
+    fun hasCustomAPIKey(): Boolean {
+        return !getCustomAPIKey().isNullOrBlank()
+    }
+
     // MARK: - Backward Compatible Methods (defaults to current provider)
 
     fun saveAPIKey(key: String): Boolean {
@@ -182,6 +220,7 @@ class APIKeyManager(context: Context) {
                 }
             }
             APIProvider.OPENROUTER -> KEY_OPENROUTER
+            APIProvider.CUSTOM -> KEY_CUSTOM
         }
     }
 
