@@ -37,6 +37,7 @@ import com.meta.wearable.dat.core.types.PermissionStatus
 import com.smartview.glassai.R
 import com.smartview.glassai.ui.theme.*
 import com.smartview.glassai.utils.APIKeyManager
+import com.smartview.glassai.viewmodels.AssistantViewModel
 import com.smartview.glassai.viewmodels.WearablesViewModel
 import kotlinx.coroutines.launch
 
@@ -57,6 +58,12 @@ fun HomeScreen(
     val apiKeyManager = remember { APIKeyManager.getInstance(context) }
     val connectionState by wearablesViewModel.connectionState.collectAsState()
     val hasActiveDevice by wearablesViewModel.hasActiveDevice.collectAsState()
+    val assistantViewModel = remember {
+        AssistantViewModel(
+            providerManager = com.smartview.glassai.managers.APIProviderManager.getInstance(context),
+            apiKeyManager = apiKeyManager
+        )
+    }
 
     // API Key dialog state
     var showApiKeyDialog by remember { mutableStateOf(false) }
@@ -66,6 +73,8 @@ fun HomeScreen(
     var showCameraPermissionDeniedDialog by remember { mutableStateOf(false) }
     // Loading state for permission check
     var isCheckingPermission by remember { mutableStateOf(false) }
+    // Jarvis assistant dialog
+    var showJarvisDialog by remember { mutableStateOf(false) }
 
     // Function to check camera permission and navigate
     fun checkCameraPermissionAndNavigate(onSuccess: () -> Unit) {
@@ -208,6 +217,14 @@ fun HomeScreen(
                     Text(stringResource(R.string.ok))
                 }
             }
+        )
+    }
+
+    // Jarvis voice assistant dialog
+    if (showJarvisDialog) {
+        JarvisVoiceDialog(
+            viewModel = assistantViewModel,
+            onDismiss = { showJarvisDialog = false }
         )
     }
 
@@ -381,6 +398,73 @@ fun HomeScreen(
                         checkCameraPermissionAndNavigate { onNavigateToRTMPStream() }
                     }
                 )
+            }
+
+            // Jarvis Assistant — voice AI action cards
+            Spacer(modifier = Modifier.height(AppSpacing.medium))
+            Text(
+                text = "🤖 Jarvis Voice Assistant",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = AppSpacing.large, bottom = AppSpacing.small)
+            )
+            Text(
+                text = "Ask Gemma 4 for anything — music, timer, answers, macros",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = AppSpacing.large, bottom = AppSpacing.medium)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppSpacing.large),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.small)
+            ) {
+                // Row 1: General assistant + Music
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.small)
+                ) {
+                    JarvisActionCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Jarvis",
+                        subtitle = "Open voice assistant",
+                        icon = Icons.Default.Mic,
+                        gradientColor = Secondary,
+                        onClick = { showJarvisDialog = true }
+                    )
+                    JarvisActionCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Music",
+                        subtitle = "Gemma 4 asks Spotify",
+                        icon = Icons.Default.MusicNote,
+                        gradientColor = Color(0xFFE91E63),
+                        onClick = { showJarvisDialog = true }
+                    )
+                }
+                // Row 2: Timer + Search
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.small)
+                ) {
+                    JarvisActionCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Timer",
+                        subtitle = "Set a timer or alarm",
+                        icon = Icons.Default.Alarm,
+                        gradientColor = Color(0xFFFF9800),
+                        onClick = { showJarvisDialog = true }
+                    )
+                    JarvisActionCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Shortcuts",
+                        subtitle = "Trigger a MacroDroid",
+                        icon = Icons.Default.FlashOn,
+                        gradientColor = Color(0xFF4CAF50),
+                        onClick = { showJarvisDialog = true }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(AppSpacing.extraLarge))
