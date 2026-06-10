@@ -3,7 +3,7 @@ package com.smartview.glassai.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,8 +31,13 @@ fun GalleryScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SurfaceLight
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -41,7 +46,7 @@ fun GalleryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SurfaceLight),
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             // Empty state
@@ -53,7 +58,7 @@ fun GalleryScreen(
                     imageVector = Icons.Default.PhotoLibrary,
                     contentDescription = null,
                     modifier = Modifier.size(80.dp),
-                    tint = TextTertiaryLight
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 )
 
                 Spacer(modifier = Modifier.height(AppSpacing.large))
@@ -62,7 +67,7 @@ fun GalleryScreen(
                     text = stringResource(R.string.gallery_empty),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimaryLight
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(AppSpacing.small))
@@ -70,7 +75,7 @@ fun GalleryScreen(
                 Text(
                     text = "Photos taken with Live AI will appear here",
                     fontSize = 14.sp,
-                    color = TextSecondaryLight,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = AppSpacing.extraLarge)
                 )

@@ -15,44 +15,62 @@ import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
-    secondary = Secondary,
-    tertiary = Accent,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    surfaceVariant = CardBackgroundLight,
     onPrimary = Color.White,
+    primaryContainer = PrimaryContainer,
+    onPrimaryContainer = OnPrimaryContainer,
+    secondary = Secondary,
     onSecondary = Color.White,
+    secondaryContainer = SecondaryContainer,
+    onSecondaryContainer = OnSecondaryContainer,
+    tertiary = Accent,
     onTertiary = Color.White,
+    tertiaryContainer = AccentContainer,
+    onTertiaryContainer = OnAccentContainer,
+    background = BackgroundLight,
     onBackground = TextPrimaryLight,
+    surface = SurfaceLight,
     onSurface = TextPrimaryLight,
+    surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = TextSecondaryLight,
+    outline = OutlineLight,
     error = Error,
-    onError = Color.White
+    onError = Color.White,
+    errorContainer = ErrorContainer,
+    onErrorContainer = DestructiveForeground
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Primary,
-    secondary = Secondary,
-    tertiary = Accent,
+    primary = PrimaryLight,
+    onPrimary = Color(0xFF001B3E),
+    primaryContainer = PrimaryDark,
+    onPrimaryContainer = PrimaryContainer,
+    secondary = SecondaryLight,
+    onSecondary = Color(0xFF3E1500),
+    secondaryContainer = SecondaryDark,
+    onSecondaryContainer = SecondaryContainer,
+    tertiary = AccentLight,
+    onTertiary = Color(0xFF1A0033),
+    tertiaryContainer = Color(0xFF4A1FBF),
+    onTertiaryContainer = AccentContainer,
     background = BackgroundDark,
-    surface = SurfaceDark,
-    surfaceVariant = CardBackgroundDark,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
     onBackground = TextPrimaryDark,
+    surface = SurfaceDark,
     onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = TextSecondaryDark,
-    error = Error,
-    onError = Color.White
+    outline = OutlineDark,
+    error = Color(0xFFF28B82),
+    onError = Color(0xFF601410),
+    errorContainer = Color(0xFF601410),
+    onErrorContainer = Color(0xFFFAD1CF)
 )
 
 @Composable
 fun LocalMetaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    // Always use light theme
-    val colorScheme = LightColorScheme
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val view = LocalView.current
 
     if (!view.isInEditMode) {
@@ -61,8 +79,8 @@ fun LocalMetaTheme(
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
             WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = true
-                isAppearanceLightNavigationBars = true
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
             }
         }
     }
@@ -74,7 +92,7 @@ fun LocalMetaTheme(
     )
 }
 
-// Spacing constants matching iOS
+// Spacing constants
 object AppSpacing {
     val extraSmall = 4.dp
     val small = 8.dp
@@ -83,7 +101,7 @@ object AppSpacing {
     val extraLarge = 32.dp
 }
 
-// Corner radius constants matching iOS
+// Corner radius constants
 object AppRadius {
     val small = 8.dp
     val medium = 12.dp

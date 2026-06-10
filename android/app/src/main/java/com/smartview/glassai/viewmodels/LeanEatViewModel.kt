@@ -8,7 +8,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.smartview.glassai.data.FoodHistoryStorage
 import com.smartview.glassai.managers.APIProviderManager
+import com.smartview.glassai.models.FoodEntry
 import com.smartview.glassai.models.FoodNutritionResponse
 import com.smartview.glassai.services.LeanEatResult
 import com.smartview.glassai.services.LeanEatService
@@ -26,6 +29,8 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
     private val apiKeyManager = APIKeyManager.getInstance(application)
     private val providerManager = APIProviderManager.getInstance(application)
     private var leanEatService: LeanEatService? = null
+    private val foodHistoryStorage = FoodHistoryStorage.getInstance(application)
+    private val gson = Gson()
 
     // State
     sealed class ViewState {
@@ -51,30 +56,37 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
     private val _isAnalyzing = MutableStateFlow(false)
     val isAnalyzing: StateFlow<Boolean> = _isAnalyzing.asStateFlow()
 
-    /**
-     * Emits a one-shot signal when the nutrition call fell back from the
-     * primary to the local server. The screen observes this and shows a
-     * Toast/Snackbar. Same contract as [VisionViewModel.fallbackNotice].
-     */
+    // Food history
+    private val _foodHistory = MutableStateFlow<List<FoodEntry>>(emptyList())
+    val foodHistory: StateFlow<List<FoodEntry>> = _foodHistory.asStateFlow()
+
+    // Save indicator (one-shot)
+    private val _saveConfirmation = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val saveConfirmation: SharedFlow<String> = _saveConfirmation
+
+    /** Emits a one-shot signal when the nutrition call fell back from primary to local server. */
     private val _fallbackNotice = MutableSharedFlow<VisionViewModel.FallbackNotice>(extraBufferCapacity = 1)
     val fallbackNotice: SharedFlow<VisionViewModel.FallbackNotice> = _fallbackNotice
 
     init {
         initializeService()
+        loadFoodHistory()
     }
 
     private fun initializeService() {
-        // LeanEatService is now called per-request with explicit configs, so
-        // we no longer need to construct a stateful instance ahead of time.
-        // Keep the field for backward compatibility (some legacy code paths
-        // still reference it) but it's safe to leave null.
         leanEatService = null
+    }
+
+    private fun loadFoodHistory() {
+        val entries = foodHistoryStorage.getAllEntries()
+        _foodHistory.value = entries
     }
 
     fun setCapturedImage(bitmap: Bitmap) {
         _capturedImage.value = bitmap
         _viewState.value = ViewState.Capturing
         _nutritionResult.value = null
+        _errorMessage.value = null
     }
 
     fun analyzeFood() {
@@ -117,6 +129,8 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
                         }
                         _nutritionResult.value = result.response
                         _viewState.value = ViewState.Result(result.response)
+                        // Auto-save to history
+                        saveCurrentResultToHistory()
                     }
                     is LeanEatResult.Failure -> {
                         _errorMessage.value = result.message
@@ -130,6 +144,46 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
                 _isAnalyzing.value = false
             }
         }
+    }
+
+    /**
+     * Save the current analysis result to food history.
+     */
+    private fun saveCurrentResultToHistory() {
+        val response = _nutritionResult.value ?: return
+        val bitmap = _capturedImage.value
+        val responseJson = try {
+            gson.toJson(response)
+        } catch (_: Exception) {
+            ""
+        }
+
+        val success = foodHistoryStorage.saveEntry(
+            bitmap = bitmap,
+            calories = response.totalCalories,
+            protein = response.totalProtein,
+            carbs = response.totalCarbs,
+            fat = response.totalFat,
+            healthScore = response.healthScore,
+            foods = response.foods,
+            suggestions = response.suggestions,
+            responseJson = responseJson
+        )
+
+        if (success) {
+            loadFoodHistory()
+            _saveConfirmation.tryEmit("Saved to history ✓")
+        }
+    }
+
+    fun deleteFoodEntry(id: String) {
+        foodHistoryStorage.deleteEntry(id)
+        loadFoodHistory()
+    }
+
+    fun clearAllHistory() {
+        foodHistoryStorage.deleteAllEntries()
+        loadFoodHistory()
     }
 
     fun retakePhoto() {
@@ -169,6 +223,7 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
                 resolver.update(uri, contentValues, null, null)
             }
 
+            _saveConfirmation.tryEmit("Saved to gallery ✓")
             true
         } catch (e: Exception) {
             _errorMessage.value = "Failed to save image: ${e.message}"

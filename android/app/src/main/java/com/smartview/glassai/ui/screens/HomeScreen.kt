@@ -257,13 +257,13 @@ fun HomeScreen(
                     text = stringResource(R.string.app_name),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimaryLight
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(AppSpacing.small))
                 Text(
                     text = stringResource(R.string.home_subtitle),
                     fontSize = 16.sp,
-                    color = TextSecondaryLight
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -402,13 +402,26 @@ fun HomeScreen(
 
             // Jarvis Assistant — voice AI action cards
             Spacer(modifier = Modifier.height(AppSpacing.medium))
-            Text(
-                text = "🤖 Jarvis Voice Assistant",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = AppSpacing.large, bottom = AppSpacing.small)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = AppSpacing.large, end = AppSpacing.large, bottom = AppSpacing.small),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SmartToy,
+                    contentDescription = null,
+                    tint = Secondary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(AppSpacing.small))
+                Text(
+                    text = "Jarvis Voice Assistant",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             Text(
                 text = "Ask Gemma 4 for anything — music, timer, answers, macros",
                 fontSize = 13.sp,
@@ -706,8 +719,9 @@ private fun DeviceStatusCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AppRadius.large),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackgroundLight
+            containerColor = MaterialTheme.colorScheme.surface
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = if (hasDevice) { { showDisconnectDialog = true } } else { {} }
     ) {
         Row(
@@ -743,7 +757,7 @@ private fun DeviceStatusCard(
                     text = stringResource(R.string.rayban_glasses),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimaryLight
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = when {
@@ -754,7 +768,7 @@ private fun DeviceStatusCard(
                         else -> stringResource(R.string.disconnected)
                     },
                     fontSize = 14.sp,
-                    color = if (showAsConnected) Success else TextSecondaryLight
+                    color = if (showAsConnected) Success else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

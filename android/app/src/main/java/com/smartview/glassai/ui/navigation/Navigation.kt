@@ -19,7 +19,6 @@ import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.smartview.glassai.R
 import com.smartview.glassai.ui.screens.*
-import com.smartview.glassai.ui.theme.Primary
 import com.smartview.glassai.viewmodels.WearablesViewModel
 
 sealed class Screen(val route: String) {
@@ -74,6 +73,7 @@ fun LocalMetaNavigation(
             if (showBottomNav) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
+                        val selected = currentRoute == item.route
                         NavigationBarItem(
                             icon = {
                                 Icon(
@@ -82,7 +82,7 @@ fun LocalMetaNavigation(
                                 )
                             },
                             label = { Text(stringResource(item.labelResId)) },
-                            selected = currentRoute == item.route,
+                            selected = selected,
                             onClick = {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
@@ -93,9 +93,11 @@ fun LocalMetaNavigation(
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Primary,
-                                selectedTextColor = Primary,
-                                indicatorColor = Primary.copy(alpha = 0.1f)
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             )
                         )
                     }
@@ -144,9 +146,9 @@ fun LocalMetaNavigation(
             }
 
             composable(Screen.LeanEat.route) {
-                val currentFrame by wearablesViewModel.currentFrame.collectAsState()
+                val capturedPhoto by wearablesViewModel.capturedPhoto.collectAsState()
                 LeanEatScreen(
-                    currentFrame = currentFrame,
+                    capturedPhoto = capturedPhoto,
                     onBackClick = {
                         navController.popBackStack()
                     },
