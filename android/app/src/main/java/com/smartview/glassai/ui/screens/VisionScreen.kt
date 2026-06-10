@@ -145,7 +145,7 @@ private fun VisionIdleContent(onTakePhoto: () -> Unit) {
             imageVector = Icons.Default.Visibility,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-            tint = Primary.copy(alpha = 0.5f)
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
         )
         Spacer(modifier = Modifier.height(AppSpacing.large))
         Text(
@@ -163,7 +163,7 @@ private fun VisionIdleContent(onTakePhoto: () -> Unit) {
         GradientButton(
             text = stringResource(R.string.take_photo),
             onClick = onTakePhoto,
-            gradientColors = listOf(Primary, PrimaryLight)
+            gradientColors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
         )
     }
 }
@@ -283,7 +283,7 @@ private fun VisionCapturedContent(
             Button(
                 onClick = onAnalyze,
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Default.Search, contentDescription = null)
                 Spacer(modifier = Modifier.width(AppSpacing.small))
@@ -365,7 +365,7 @@ private fun VisionResultContent(
                     Icon(
                         imageVector = Icons.Default.Description,
                         contentDescription = null,
-                        tint = Primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(AppSpacing.small))
@@ -414,7 +414,7 @@ private fun VisionResultContent(
             Button(
                 onClick = onRetake,
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -458,7 +458,7 @@ private fun VisionErrorContent(
             }
             Button(
                 onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(stringResource(R.string.retry))
             }

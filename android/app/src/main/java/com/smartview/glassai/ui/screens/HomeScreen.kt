@@ -1,6 +1,7 @@
 package com.smartview.glassai.ui.screens
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,21 +21,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.sp
 import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.smartview.glassai.R
+import com.smartview.glassai.managers.APIProviderManager
+import com.smartview.glassai.managers.ProviderStatus
+import com.smartview.glassai.managers.ProviderStatusChecker
 import com.smartview.glassai.ui.theme.*
 import com.smartview.glassai.utils.APIKeyManager
 import com.smartview.glassai.viewmodels.AssistantViewModel
@@ -60,22 +62,21 @@ fun HomeScreen(
     val hasActiveDevice by wearablesViewModel.hasActiveDevice.collectAsState()
     val assistantViewModel = remember {
         AssistantViewModel(
-            providerManager = com.smartview.glassai.managers.APIProviderManager.getInstance(context),
+            providerManager = APIProviderManager.getInstance(context),
             apiKeyManager = apiKeyManager
         )
     }
 
     // AI provider status check
-    var aiStatus by remember { mutableStateOf<com.smartview.glassai.managers.ProviderStatus?>(null) }
+    var aiStatus by remember { mutableStateOf<ProviderStatus?>(null) }
     var isCheckingAi by remember { mutableStateOf(false) }
 
-    // Check AI status on launch and every time the screen recomposes
     LaunchedEffect(Unit) {
         if (!isCheckingAi) {
             isCheckingAi = true
             try {
-                val pm = com.smartview.glassai.managers.APIProviderManager.getInstance(context)
-                aiStatus = com.smartview.glassai.managers.ProviderStatusChecker.checkPrimary(pm, apiKeyManager)
+                val pm = APIProviderManager.getInstance(context)
+                aiStatus = ProviderStatusChecker.checkPrimary(pm, apiKeyManager)
             } catch (_: Exception) {
                 aiStatus = null
             } finally {
@@ -84,36 +85,27 @@ fun HomeScreen(
         }
     }
 
-    // API Key dialog state
+    // Dialog states
     var showApiKeyDialog by remember { mutableStateOf(false) }
-    // Device not connected dialog state
     var showDeviceNotConnectedDialog by remember { mutableStateOf(false) }
-    // Camera permission denied dialog state
     var showCameraPermissionDeniedDialog by remember { mutableStateOf(false) }
-    // Loading state for permission check
     var isCheckingPermission by remember { mutableStateOf(false) }
-    // Jarvis assistant dialog
     var showJarvisDialog by remember { mutableStateOf(false) }
 
-    // Function to check camera permission and navigate
     fun checkCameraPermissionAndNavigate(onSuccess: () -> Unit) {
         scope.launch {
             isCheckingPermission = true
             try {
                 val permission = Permission.CAMERA
                 val result = Wearables.checkPermissionStatus(permission)
-
                 val permissionStatus = result.getOrNull()
                 if (permissionStatus == PermissionStatus.Granted) {
                     isCheckingPermission = false
                     onSuccess()
                     return@launch
                 }
-
-                // Request permission
                 val requestedStatus = onRequestWearablesPermission(permission)
                 isCheckingPermission = false
-
                 when (requestedStatus) {
                     PermissionStatus.Granted -> onSuccess()
                     PermissionStatus.Denied -> showCameraPermissionDeniedDialog = true
@@ -125,7 +117,7 @@ fun HomeScreen(
         }
     }
 
-    // API Key configuration dialog
+    // ── Dialogs ──
     if (showApiKeyDialog) {
         AlertDialog(
             onDismissRequest = { showApiKeyDialog = false },
@@ -133,7 +125,7 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Default.Key,
                     contentDescription = null,
-                    tint = Primary
+                    tint = MaterialTheme.colorScheme.primary
                 )
             },
             title = {
@@ -151,25 +143,22 @@ fun HomeScreen(
                         showApiKeyDialog = false
                         uriHandler.openUri("https://bailian.console.aliyun.com/?apiKey=1")
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(stringResource(R.string.apikey_get_key))
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showApiKeyDialog = false
-                        onNavigateToSettings()
-                    }
-                ) {
+                TextButton(onClick = {
+                    showApiKeyDialog = false
+                    onNavigateToSettings()
+                }) {
                     Text(stringResource(R.string.go_to_settings))
                 }
             }
         )
     }
 
-    // Device not connected dialog
     if (showDeviceNotConnectedDialog) {
         AlertDialog(
             onDismissRequest = { showDeviceNotConnectedDialog = false },
@@ -177,7 +166,7 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Default.Bluetooth,
                     contentDescription = null,
-                    tint = Primary
+                    tint = MaterialTheme.colorScheme.primary
                 )
             },
             title = {
@@ -195,7 +184,7 @@ fun HomeScreen(
                         showDeviceNotConnectedDialog = false
                         wearablesViewModel.startDeviceSearch()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(stringResource(R.string.connect_device))
                 }
@@ -208,7 +197,6 @@ fun HomeScreen(
         )
     }
 
-    // Camera permission denied dialog
     if (showCameraPermissionDeniedDialog) {
         AlertDialog(
             onDismissRequest = { showCameraPermissionDeniedDialog = false },
@@ -216,7 +204,7 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Default.Videocam,
                     contentDescription = null,
-                    tint = Error
+                    tint = MaterialTheme.colorScheme.error
                 )
             },
             title = {
@@ -231,7 +219,7 @@ fun HomeScreen(
             confirmButton = {
                 Button(
                     onClick = { showCameraPermissionDeniedDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(stringResource(R.string.ok))
                 }
@@ -239,7 +227,6 @@ fun HomeScreen(
         )
     }
 
-    // Jarvis voice assistant dialog
     if (showJarvisDialog) {
         JarvisVoiceDialog(
             viewModel = assistantViewModel,
@@ -247,317 +234,292 @@ fun HomeScreen(
         )
     }
 
-    Box(
+    // ── Main Layout ──
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Primary.copy(alpha = 0.1f),
-                        Secondary.copy(alpha = 0.1f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
     ) {
+        // ── Header ──
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
+                .fillMaxWidth()
+                .padding(top = 28.dp, bottom = AppSpacing.large)
+                .padding(horizontal = AppSpacing.large),
+            horizontalAlignment = Alignment.Start
         ) {
-            // Header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = AppSpacing.extraLarge, bottom = AppSpacing.large),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.app_name),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(AppSpacing.small))
-                Text(
-                    text = stringResource(R.string.home_subtitle),
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Device Connection Card
-            DeviceStatusCard(
-                connectionState = connectionState,
-                onConnect = { wearablesViewModel.startDeviceSearch() },
-                onDisconnect = { wearablesViewModel.disconnect() },
-                modifier = Modifier.padding(horizontal = AppSpacing.large)
-            )
-
-            Spacer(modifier = Modifier.height(AppSpacing.medium))
-
-            // AI Provider Status Card
-            AiStatusCard(
-                status = aiStatus,
-                onRefresh = {
-                    scope.launch {
-                        if (!isCheckingAi) {
-                            isCheckingAi = true
-                            try {
-                                val pm = com.smartview.glassai.managers.APIProviderManager.getInstance(context)
-                                aiStatus = com.smartview.glassai.managers.ProviderStatusChecker.checkPrimary(pm, apiKeyManager)
-                            } catch (_: Exception) {
-                                aiStatus = null
-                            } finally {
-                                isCheckingAi = false
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.padding(horizontal = AppSpacing.large)
-            )
-
-            Spacer(modifier = Modifier.height(AppSpacing.medium))
-
-            // Feature Grid
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppSpacing.large),
-                verticalArrangement = Arrangement.spacedBy(AppSpacing.medium)
-            ) {
-                // Row 1: LiveAI + Quick Vision
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium)
-                ) {
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = stringResource(R.string.feature_liveai_title),
-                        subtitle = stringResource(R.string.feature_liveai_subtitle),
-                        icon = Icons.Default.Psychology,
-                        gradientColors = listOf(LiveAIColor, LiveAIColor.copy(alpha = 0.7f)),
-                        isLoading = isCheckingPermission,
-                        onClick = {
-                            // First check device connection
-                            if (!hasActiveDevice) {
-                                showDeviceNotConnectedDialog = true
-                                return@FeatureCard
-                            }
-                            // Then check API key
-                            val apiKey = apiKeyManager.getAPIKey()
-                            if (apiKey.isNullOrBlank()) {
-                                showApiKeyDialog = true
-                                return@FeatureCard
-                            }
-                            // Finally check camera permission and navigate
-                            checkCameraPermissionAndNavigate { onNavigateToLiveAI() }
-                        }
-                    )
-
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = stringResource(R.string.feature_quickvision_title),
-                        subtitle = stringResource(R.string.feature_quickvision_subtitle),
-                        icon = Icons.Default.Visibility,
-                        gradientColors = listOf(QuickVisionColor, QuickVisionColor.copy(alpha = 0.7f)),
-                        isLoading = isCheckingPermission,
-                        onClick = {
-                            // Check device connection first
-                            if (!hasActiveDevice) {
-                                showDeviceNotConnectedDialog = true
-                                return@FeatureCard
-                            }
-                            // Check API key
-                            val apiKey = apiKeyManager.getAPIKey()
-                            if (apiKey.isNullOrBlank()) {
-                                showApiKeyDialog = true
-                                return@FeatureCard
-                            }
-                            // Navigate to Vision (Quick Vision)
-                            checkCameraPermissionAndNavigate { onNavigateToVision() }
-                        }
-                    )
-                }
-
-                // Row 2: LeanEat + WordLearn
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium)
-                ) {
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = stringResource(R.string.lean_eat),
-                        subtitle = stringResource(R.string.lean_eat_subtitle),
-                        icon = Icons.Default.Restaurant,
-                        gradientColors = listOf(LeanEatColor, LeanEatColor.copy(alpha = 0.7f)),
-                        onClick = onNavigateToLeanEat
-                    )
-
-                    FeatureCard(
-                        modifier = Modifier.weight(1f),
-                        title = stringResource(R.string.feature_wordlearn_title),
-                        subtitle = stringResource(R.string.feature_wordlearn_subtitle),
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        gradientColors = listOf(WordLearnColor, WordLearnColor.copy(alpha = 0.7f)),
-                        isPlaceholder = true,
-                        onClick = {}
-                    )
-                }
-
-                // Row 3: LiveStream (wide card)
-                FeatureCardWide(
-                    title = stringResource(R.string.feature_livestream_title),
-                    subtitle = stringResource(R.string.feature_livestream_subtitle),
-                    icon = Icons.Default.Videocam,
-                    gradientColors = listOf(LiveStreamColor, LiveStreamColor.copy(alpha = 0.7f)),
-                    isLoading = isCheckingPermission,
-                    onClick = {
-                        // Check device connection first
-                        if (!hasActiveDevice) {
-                            showDeviceNotConnectedDialog = true
-                            return@FeatureCardWide
-                        }
-                        // Check camera permission and navigate
-                        checkCameraPermissionAndNavigate { onNavigateToLiveStream() }
-                    }
-                )
-
-                // Row 4: RTMP Streaming (wide card) - Experimental
-                FeatureCardWide(
-                    title = stringResource(R.string.feature_rtmp_title),
-                    subtitle = stringResource(R.string.feature_rtmp_subtitle),
-                    icon = Icons.Default.Stream,
-                    gradientColors = listOf(Color(0xFF9C27B0), Color(0xFF9C27B0).copy(alpha = 0.7f)),
-                    isLoading = isCheckingPermission,
-                    onClick = {
-                        // Check device connection first
-                        if (!hasActiveDevice) {
-                            showDeviceNotConnectedDialog = true
-                            return@FeatureCardWide
-                        }
-                        // Check camera permission and navigate
-                        checkCameraPermissionAndNavigate { onNavigateToRTMPStream() }
-                    }
-                )
-            }
-
-            // Jarvis Assistant — voice AI action cards
-            Spacer(modifier = Modifier.height(AppSpacing.medium))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = AppSpacing.large, end = AppSpacing.large, bottom = AppSpacing.small),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SmartToy,
-                    contentDescription = null,
-                    tint = Secondary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(AppSpacing.small))
-                Text(
-                    text = "Jarvis Voice Assistant",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
             Text(
-                text = "Ask Gemma 4 for anything — music, timer, answers, macros",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = AppSpacing.large, bottom = AppSpacing.medium)
+                text = stringResource(R.string.app_name),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 0.5.sp
             )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppSpacing.large),
-                verticalArrangement = Arrangement.spacedBy(AppSpacing.small)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.home_subtitle),
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 22.sp
+            )
+        }
+
+        // ── Device Status Pill ──
+        DeviceStatusPill(
+            connectionState = connectionState,
+            onConnect = { wearablesViewModel.startDeviceSearch() },
+            onDisconnect = { wearablesViewModel.disconnect() },
+            modifier = Modifier.padding(horizontal = AppSpacing.large)
+        )
+
+        Spacer(modifier = Modifier.height(AppSpacing.small))
+
+        // ── AI Provider Compact Status ──
+        AiProviderStatus(
+            status = aiStatus,
+            onRefresh = {
+                scope.launch {
+                    if (!isCheckingAi) {
+                        isCheckingAi = true
+                        try {
+                            val pm = APIProviderManager.getInstance(context)
+                            aiStatus = ProviderStatusChecker.checkPrimary(pm, apiKeyManager)
+                        } catch (_: Exception) {
+                            aiStatus = null
+                        } finally {
+                            isCheckingAi = false
+                        }
+                    }
+                }
+            },
+            modifier = Modifier.padding(horizontal = AppSpacing.large)
+        )
+
+        Spacer(modifier = Modifier.height(AppSpacing.medium))
+
+        // ── Feature Section Label ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.large),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Apps,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(AppSpacing.small))
+            Text(
+                text = "Features",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        Spacer(modifier = Modifier.height(AppSpacing.small))
+
+        // ── Feature Bento Grid ──
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.large),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.medium)
+        ) {
+            // Row 1: LiveAI + QuickVision
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium)
             ) {
-                // Row 1: General assistant + Music
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.small)
-                ) {
-                    JarvisActionCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Jarvis",
-                        subtitle = "Open voice assistant",
-                        icon = Icons.Default.Mic,
-                        gradientColor = Secondary,
-                        onClick = { showJarvisDialog = true }
-                    )
-                    JarvisActionCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Music",
-                        subtitle = "Gemma 4 asks Spotify",
-                        icon = Icons.Default.MusicNote,
-                        gradientColor = Color(0xFFE91E63),
-                        onClick = { showJarvisDialog = true }
-                    )
-                }
-                // Row 2: Timer + Search
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.small)
-                ) {
-                    JarvisActionCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Timer",
-                        subtitle = "Set a timer or alarm",
-                        icon = Icons.Default.Alarm,
-                        gradientColor = Color(0xFFFF9800),
-                        onClick = { showJarvisDialog = true }
-                    )
-                    JarvisActionCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Shortcuts",
-                        subtitle = "Trigger a MacroDroid",
-                        icon = Icons.Default.FlashOn,
-                        gradientColor = Color(0xFF4CAF50),
-                        onClick = { showJarvisDialog = true }
-                    )
-                }
+                ModernFeatureCard(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(R.string.feature_liveai_title),
+                    subtitle = stringResource(R.string.feature_liveai_subtitle),
+                    icon = Icons.Default.Psychology,
+                    featureColor = LiveAIColor,
+                    onClick = {
+                        if (!hasActiveDevice) { showDeviceNotConnectedDialog = true; return@ModernFeatureCard }
+                        val apiKey = apiKeyManager.getAPIKey()
+                        if (apiKey.isNullOrBlank()) { showApiKeyDialog = true; return@ModernFeatureCard }
+                        checkCameraPermissionAndNavigate { onNavigateToLiveAI() }
+                    }
+                )
+                ModernFeatureCard(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(R.string.feature_quickvision_title),
+                    subtitle = stringResource(R.string.feature_quickvision_subtitle),
+                    icon = Icons.Default.Visibility,
+                    featureColor = QuickVisionColor,
+                    onClick = {
+                        if (!hasActiveDevice) { showDeviceNotConnectedDialog = true; return@ModernFeatureCard }
+                        val apiKey = apiKeyManager.getAPIKey()
+                        if (apiKey.isNullOrBlank()) { showApiKeyDialog = true; return@ModernFeatureCard }
+                        checkCameraPermissionAndNavigate { onNavigateToVision() }
+                    }
+                )
             }
 
-            Spacer(modifier = Modifier.height(AppSpacing.extraLarge))
+            // Row 2: LeanEat + WordLearn
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium)
+            ) {
+                ModernFeatureCard(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(R.string.lean_eat),
+                    subtitle = stringResource(R.string.lean_eat_subtitle),
+                    icon = Icons.Default.Restaurant,
+                    featureColor = LeanEatColor,
+                    onClick = onNavigateToLeanEat
+                )
+                ModernFeatureCard(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(R.string.feature_wordlearn_title),
+                    subtitle = stringResource(R.string.feature_wordlearn_subtitle),
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    featureColor = WordLearnColor,
+                    isPlaceholder = true,
+                    onClick = {}
+                )
+            }
+
+            // Wide card: LiveStream
+            WideFeatureCard(
+                title = stringResource(R.string.feature_livestream_title),
+                subtitle = stringResource(R.string.feature_livestream_subtitle),
+                icon = Icons.Default.Videocam,
+                featureColor = LiveStreamColor,
+                onClick = {
+                    if (!hasActiveDevice) { showDeviceNotConnectedDialog = true; return@WideFeatureCard }
+                    checkCameraPermissionAndNavigate { onNavigateToLiveStream() }
+                }
+            )
+
+            // Wide card: RTMP
+            WideFeatureCard(
+                title = stringResource(R.string.feature_rtmp_title),
+                subtitle = stringResource(R.string.feature_rtmp_subtitle),
+                icon = Icons.Default.Stream,
+                featureColor = RTMPColor,
+                onClick = {
+                    if (!hasActiveDevice) { showDeviceNotConnectedDialog = true; return@WideFeatureCard }
+                    checkCameraPermissionAndNavigate { onNavigateToRTMPStream() }
+                }
+            )
         }
+
+        Spacer(modifier = Modifier.height(AppSpacing.large))
+
+        // ── Jarvis Section ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.large),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.SmartToy,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.width(AppSpacing.small))
+            Text(
+                text = "Jarvis Voice Assistant",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        Text(
+            text = "Ask Gemma 4 for anything — music, timer, answers, macros",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = AppSpacing.large, bottom = AppSpacing.medium)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.large),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.small)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.small)
+            ) {
+                JarvisActionCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Jarvis",
+                    subtitle = "Open voice assistant",
+                    icon = Icons.Default.Mic,
+                    gradientColor = MaterialTheme.colorScheme.primary,
+                    onClick = { showJarvisDialog = true }
+                )
+                JarvisActionCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Music",
+                    subtitle = "Gemma 4 asks Spotify",
+                    icon = Icons.Default.MusicNote,
+                    gradientColor = LiveStreamColor,
+                    onClick = { showJarvisDialog = true }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.small)
+            ) {
+                JarvisActionCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Timer",
+                    subtitle = "Set a timer or alarm",
+                    icon = Icons.Default.Alarm,
+                    gradientColor = Warning,
+                    onClick = { showJarvisDialog = true }
+                )
+                JarvisActionCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Shortcuts",
+                    subtitle = "Trigger a MacroDroid",
+                    icon = Icons.Default.FlashOn,
+                    gradientColor = Success,
+                    onClick = { showJarvisDialog = true }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(AppSpacing.extraLarge))
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// MODERN FEATURE CARD
+// ─────────────────────────────────────────────────────────────
+
 @Composable
-private fun FeatureCard(
+private fun ModernFeatureCard(
     modifier: Modifier = Modifier,
     title: String,
     subtitle: String,
     icon: ImageVector,
-    gradientColors: List<Color>,
+    featureColor: Color,
     isPlaceholder: Boolean = false,
-    isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        label = "scale"
+        targetValue = if (isPressed) 0.96f else 1f,
+        label = "featureScale"
     )
 
-    // Use Box with explicit gradient background - no inner containers with backgrounds
-    Box(
+    ElevatedCard(
         modifier = modifier
-            .height(180.dp)
             .scale(scale)
-            .clip(RoundedCornerShape(AppRadius.large))
-            .background(
-                brush = Brush.linearGradient(
-                    colors = gradientColors,
-                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                )
-            )
             .then(
                 if (!isPlaceholder) {
                     Modifier.clickable(
@@ -567,62 +529,81 @@ private fun FeatureCard(
                     )
                 } else Modifier
             ),
-        contentAlignment = Alignment.Center
+        shape = RoundedCornerShape(AppRadius.large),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = if (isPlaceholder) 0.dp else 2.dp
+        ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (isPlaceholder)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            else
+                MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AppSpacing.medium),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Icon with circle background
+            // Icon in colored circle
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f)),
+                    .background(
+                        if (isPlaceholder) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                        else featureColor.copy(alpha = 0.12f)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    tint = if (isPlaceholder) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    else featureColor,
+                    modifier = Modifier.size(26.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(AppSpacing.medium))
+            Spacer(modifier = Modifier.height(AppSpacing.small))
 
             // Title
             Text(
                 text = title,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                textAlign = TextAlign.Center
+                color = if (isPlaceholder) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                else MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1
             )
 
-            Spacer(modifier = Modifier.height(AppSpacing.extraSmall))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Subtitle
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
-                color = Color.White.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
+                color = if (isPlaceholder) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                lineHeight = 16.sp
             )
 
-            // Coming Soon badge for placeholders
+            // Placeholder badge
             if (isPlaceholder) {
                 Spacer(modifier = Modifier.height(AppSpacing.small))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(AppRadius.small))
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .padding(horizontal = AppSpacing.medium, vertical = AppSpacing.extraSmall)
+                Surface(
+                    shape = RoundedCornerShape(AppRadius.small),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
                 ) {
                     Text(
                         text = "Coming Soon",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
                         fontSize = 10.sp,
-                        color = Color.White.copy(alpha = 0.9f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                 }
             }
@@ -630,123 +611,119 @@ private fun FeatureCard(
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// WIDE FEATURE CARD
+// ─────────────────────────────────────────────────────────────
+
 @Composable
-private fun FeatureCardWide(
+private fun WideFeatureCard(
     title: String,
     subtitle: String,
     icon: ImageVector,
-    gradientColors: List<Color>,
-    isLoading: Boolean = false,
+    featureColor: Color,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        label = "scale"
+        targetValue = if (isPressed) 0.97f else 1f,
+        label = "wideScale"
     )
 
-    Box(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .scale(scale)
-            .clip(RoundedCornerShape(AppRadius.large))
-            .background(
-                Brush.horizontalGradient(
-                    colors = gradientColors
-                )
-            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
-            )
+            ),
+        shape = RoundedCornerShape(AppRadius.large),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AppSpacing.large),
+                .padding(AppSpacing.medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon with circle background
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f)),
+                    .background(featureColor.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    tint = featureColor,
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(AppSpacing.large))
+            Spacer(modifier = Modifier.width(AppSpacing.medium))
 
-            // Text
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 20.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.height(AppSpacing.extraSmall))
                 Text(
                     text = subtitle,
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.8f)
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
             }
 
-            // Arrow
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(24.dp)
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                modifier = Modifier.size(22.dp)
             )
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// DEVICE STATUS PILL
+// ─────────────────────────────────────────────────────────────
+
 @Composable
-private fun DeviceStatusCard(
+private fun DeviceStatusPill(
     connectionState: WearablesViewModel.ConnectionState,
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // iOS doesn't distinguish between Registered and Connected on home screen
-    // Both states mean the device is available - show as "Connected"
     val isConnected = connectionState is WearablesViewModel.ConnectionState.Connected
     val isRegistered = connectionState is WearablesViewModel.ConnectionState.Registered
     val isSearching = connectionState is WearablesViewModel.ConnectionState.Searching
     val isConnecting = connectionState is WearablesViewModel.ConnectionState.Connecting
     val hasDevice = isConnected || isRegistered
-
-    // Treat both Registered and Connected as "connected" for UI purposes (matching iOS)
     val showAsConnected = hasDevice
 
     var showDisconnectDialog by remember { mutableStateOf(false) }
 
-    // Disconnect confirmation dialog
     if (showDisconnectDialog) {
         AlertDialog(
             onDismissRequest = { showDisconnectDialog = false },
             title = { Text(stringResource(R.string.settings_disconnect)) },
             text = { Text(stringResource(R.string.disconnect_confirm)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDisconnect()
-                        showDisconnectDialog = false
-                    }
-                ) {
-                    Text(stringResource(R.string.disconnect), color = Error)
+                TextButton(onClick = {
+                    onDisconnect()
+                    showDisconnectDialog = false
+                }) {
+                    Text(stringResource(R.string.disconnect), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -757,186 +734,172 @@ private fun DeviceStatusCard(
         )
     }
 
+    // Animated connection dot
+    val dotColor by animateColorAsState(
+        targetValue = if (showAsConnected) Success else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+        label = "dotColor"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val dotAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dotAlpha"
+    )
+
+    // Compact pill-shaped card
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppRadius.large),
+        shape = RoundedCornerShape(AppRadius.extraLarge),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        onClick = if (hasDevice) { { showDisconnectDialog = true } } else { {} }
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AppSpacing.medium),
+                .padding(horizontal = AppSpacing.medium, vertical = AppSpacing.small)
+                .then(
+                    if (hasDevice) Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { showDisconnectDialog = true }
+                    ) else Modifier
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon
+            // Animated connection dot
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(10.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (showAsConnected) Success.copy(alpha = 0.1f)
-                        else Primary.copy(alpha = 0.1f)
-                    ),
-                contentAlignment = Alignment.Center
+                    .background(dotColor.copy(alpha = if (showAsConnected) dotAlpha else 1f))
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Icon(
+                imageVector = Icons.Default.Bluetooth,
+                contentDescription = null,
+                tint = if (showAsConnected) Success else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.size(18.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = stringResource(R.string.rayban_glasses),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+
+            Text(
+                text = when {
+                    showAsConnected -> stringResource(R.string.connected)
+                    isSearching -> stringResource(R.string.searching)
+                    isConnecting -> stringResource(R.string.connecting)
+                    connectionState is WearablesViewModel.ConnectionState.Error -> connectionState.message
+                    else -> stringResource(R.string.disconnected)
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (showAsConnected) Success else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Connect button for disconnected state
+            if (!showAsConnected && !isSearching && !isConnecting &&
+                connectionState !is WearablesViewModel.ConnectionState.Error
             ) {
-                Icon(
-                    imageVector = Icons.Default.Bluetooth,
-                    contentDescription = null,
-                    tint = if (showAsConnected) Success else Primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(AppSpacing.medium))
-
-            // Text
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.rayban_glasses),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = when {
-                        showAsConnected -> stringResource(R.string.connected)
-                        isSearching -> stringResource(R.string.searching)
-                        isConnecting -> stringResource(R.string.connecting)
-                        connectionState is WearablesViewModel.ConnectionState.Error -> connectionState.message
-                        else -> stringResource(R.string.disconnected)
-                    },
-                    fontSize = 14.sp,
-                    color = if (showAsConnected) Success else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Connect Button or Status
-            when {
-                showAsConnected -> {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(AppRadius.small))
-                            .background(Success.copy(alpha = 0.1f))
-                            .padding(horizontal = AppSpacing.medium, vertical = AppSpacing.small)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.connected),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Success
-                        )
-                    }
-                }
-                isSearching || isConnecting -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = Primary
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(
+                    onClick = onConnect,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.connect_glasses),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
                     )
-                }
-                else -> {
-                    Button(
-                        onClick = onConnect,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Primary
-                        ),
-                        shape = RoundedCornerShape(AppRadius.small)
-                    ) {
-                        Text(stringResource(R.string.connect_glasses))
-                    }
                 }
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// AI PROVIDER STATUS COMPACT
+// ─────────────────────────────────────────────────────────────
+
 @Composable
-private fun AiStatusCard(
-    status: com.smartview.glassai.managers.ProviderStatus?,
+private fun AiProviderStatus(
+    status: ProviderStatus?,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val statusColor = when (status) {
+        is ProviderStatus.Online -> Success
+        is ProviderStatus.Offline -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    }
+
+    val statusText = when (status) {
+        is ProviderStatus.Online -> "AI Online • ${status.model} • ${status.latencyMs}ms"
+        is ProviderStatus.Offline -> "${status.providerName} — ${status.reason}"
+        is ProviderStatus.NotConfigured -> "No provider configured"
+        null -> "Checking AI…"
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppRadius.large),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(AppRadius.extraLarge),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AppSpacing.medium),
+                .padding(horizontal = AppSpacing.medium, vertical = AppSpacing.small),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(12.dp)
+                    .size(8.dp)
                     .clip(CircleShape)
-                    .background(
-                        when (status) {
-                            is com.smartview.glassai.managers.ProviderStatus.Online -> Success
-                            is com.smartview.glassai.managers.ProviderStatus.Offline -> Error
-                            else -> MaterialTheme.colorScheme.outline
-                        }
-                    )
+                    .background(statusColor)
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "AI Provider",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                when (status) {
-                    is com.smartview.glassai.managers.ProviderStatus.Online -> {
-                        Text(
-                            text = "${status.providerName} • ${status.model} • ${status.latencyMs}ms",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1
-                        )
-                    }
-                    is com.smartview.glassai.managers.ProviderStatus.Offline -> {
-                        Text(
-                            text = "${status.providerName} — ${status.reason}",
-                            fontSize = 12.sp,
-                            color = Error,
-                            maxLines = 1
-                        )
-                    }
-                    null -> {
-                        Text(
-                            text = "Checking…",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    is com.smartview.glassai.managers.ProviderStatus.NotConfigured -> {
-                        Text(
-                            text = "No provider configured",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.width(AppSpacing.small))
+            Icon(
+                imageVector = Icons.Default.Psychology,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(AppSpacing.small))
+            Text(
+                text = statusText,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.weight(1f)
+            )
             IconButton(
                 onClick = onRefresh,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(28.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = "Refresh",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

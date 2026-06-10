@@ -777,7 +777,7 @@ private fun SettingsItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (isDestructive) Error else Primary,
+            tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
 
@@ -1389,7 +1389,7 @@ private fun SettingsToggleItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (checked) Success else Primary,
+            tint = if (checked) Success else MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
 

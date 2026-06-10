@@ -82,14 +82,14 @@ val Typography = Typography(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 17.sp,
-        lineHeight = 26.sp,          // ~1.53× for readability
+        lineHeight = 26.sp,
         letterSpacing = 0.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,            // minimum accessible size
-        lineHeight = 24.sp,          // 1.5× line height
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
         letterSpacing = 0.25.sp
     ),
     bodySmall = TextStyle(

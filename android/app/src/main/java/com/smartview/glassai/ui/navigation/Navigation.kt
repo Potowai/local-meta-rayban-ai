@@ -19,7 +19,6 @@ import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.smartview.glassai.R
 import com.smartview.glassai.ui.screens.*
-import com.smartview.glassai.ui.theme.Primary
 import com.smartview.glassai.viewmodels.WearablesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

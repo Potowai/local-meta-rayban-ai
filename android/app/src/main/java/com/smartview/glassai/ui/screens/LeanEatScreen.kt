@@ -243,12 +243,31 @@ private fun IdleContent(
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium)
         ) {
             // Phone camera (always works)
-            GradientButton(
-                text = "📷 Take Photo",
-                onClick = onOpenPhoneCamera,
-                gradientColors = listOf(LeanEatColor, LeanEatColorLight),
-                modifier = Modifier.weight(1f)
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(AppRadius.medium))
+                    .background(Brush.horizontalGradient(listOf(LeanEatColor, LeanEatColorLight)))
+                    .clickable(onClick = onOpenPhoneCamera)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(AppSpacing.small))
+                    Text(
+                        text = "Take Photo",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
             // Glasses capture (if streaming)
             OutlinedButton(
                 onClick = onTakePhoto,

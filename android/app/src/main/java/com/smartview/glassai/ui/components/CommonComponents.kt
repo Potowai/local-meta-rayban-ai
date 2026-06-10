@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -38,9 +39,9 @@ fun ShimmerEffect(
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(AppRadius.large)
 ) {
     val shimmerColors = listOf(
-        Color.LightGray.copy(alpha = 0.3f),
-        Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.3f)
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     )
 
     val transition = rememberInfiniteTransition(label = "shimmer")
@@ -72,7 +73,7 @@ fun GradientButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    gradientColors: List<Color> = listOf(Primary, PrimaryLight),
+    gradientColors: List<Color> = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
     enabled: Boolean = true
 ) {
     Box(
@@ -248,7 +249,7 @@ fun LoadingIndicator(
         verticalArrangement = Arrangement.Center
     ) {
         CircularProgressIndicator(
-            color = Primary,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(48.dp)
         )
         if (message != null) {
@@ -271,7 +272,7 @@ fun ErrorMessage(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AppRadius.medium),
-        colors = CardDefaults.cardColors(containerColor = Error.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier
@@ -282,14 +283,14 @@ fun ErrorMessage(
             Text(
                 text = message,
                 modifier = Modifier.weight(1f),
-                color = Error,
+                color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium
             )
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
-                    tint = Error
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -379,7 +380,7 @@ fun ConfirmDialog(
         text = { Text(text = message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(text = confirmText, color = Error)
+                Text(text = confirmText, color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
@@ -456,10 +457,144 @@ fun HealthScoreCircle(
                 color = color
             )
             Text(
-                text = "分",
+                text = "pts",
                 fontSize = 12.sp,
                 color = color
             )
         }
+    }
+}
+
+// ── Settings UI Components ──
+
+@Composable
+fun SettingsSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(
+                horizontal = AppSpacing.medium,
+                vertical = AppSpacing.small
+            )
+        )
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.medium),
+            shape = RoundedCornerShape(AppRadius.medium)
+        ) {
+            Column(content = content)
+        }
+
+        Spacer(modifier = Modifier.height(AppSpacing.medium))
+    }
+}
+
+@Composable
+fun SettingsItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false,
+    subtitleColor: Color? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(AppSpacing.medium),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(AppSpacing.medium))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = subtitleColor ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        )
+    }
+}
+
+@Composable
+fun SettingsToggleItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onCheckedChange(!checked) }
+            )
+            .padding(AppSpacing.medium),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (checked) Success else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(AppSpacing.medium))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Success,
+                checkedTrackColor = Success.copy(alpha = 0.5f)
+            )
+        )
     }
 }
