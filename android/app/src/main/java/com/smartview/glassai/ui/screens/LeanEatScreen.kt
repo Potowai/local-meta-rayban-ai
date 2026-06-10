@@ -1,6 +1,8 @@
 package com.smartview.glassai.ui.screens
 
 import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,6 +58,15 @@ fun LeanEatScreen(
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
     val foodHistory by viewModel.foodHistory.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    // Phone camera launcher (fallback when glasses stream isn't ready)
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            viewModel.setCapturedImage(bitmap)
+        }
+    }
 
     // When the glasses capture a photo, feed it into the ViewModel
     LaunchedEffect(capturedPhoto) {
@@ -130,6 +141,7 @@ fun LeanEatScreen(
                 is LeanEatViewModel.ViewState.Idle -> {
                     IdleContent(
                         onTakePhoto = onTakePhoto,
+                        onOpenPhoneCamera = { cameraLauncher.launch(null) },
                         lastImage = null
                     )
                 }
@@ -182,7 +194,8 @@ fun LeanEatScreen(
 @Composable
 private fun IdleContent(
     onTakePhoto: () -> Unit,
-    lastImage: Bitmap?
+    lastImage: Bitmap?,
+    onOpenPhoneCamera: () -> Unit = onTakePhoto
 ) {
     Column(
         modifier = Modifier
@@ -224,13 +237,33 @@ private fun IdleContent(
 
         Spacer(modifier = Modifier.height(AppSpacing.extraLarge))
 
-        // Prominent "Take Photo with Glasses" button
-        GradientButton(
-            text = "Take Photo with Glasses",
-            onClick = onTakePhoto,
-            gradientColors = listOf(LeanEatColor, LeanEatColorLight),
-            modifier = Modifier.fillMaxWidth(0.8f)
-        )
+        // Two buttons: glasses (if connected) + phone camera
+        Row(
+            modifier = Modifier.fillMaxWidth(0.9f),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium)
+        ) {
+            // Phone camera (always works)
+            GradientButton(
+                text = "📷 Take Photo",
+                onClick = onOpenPhoneCamera,
+                gradientColors = listOf(LeanEatColor, LeanEatColorLight),
+                modifier = Modifier.weight(1f)
+            )
+            // Glasses capture (if streaming)
+            OutlinedButton(
+                onClick = onTakePhoto,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Glasses", maxLines = 1)
+            }
+        }
 
         Spacer(modifier = Modifier.height(AppSpacing.medium))
 
