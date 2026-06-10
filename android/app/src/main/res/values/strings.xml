@@ -400,4 +400,18 @@
     <string name="settings_custom_test_failure">Connection failed</string>
     <string name="settings_custom_test_models">Models available on this server:</string>
     <string name="settings_custom_test_more">more</string>
+
+    <!-- Vision Routing (primary + fallback) -->
+    <string name="settings_routing_section">Vision routing</string>
+    <string name="settings_routing_strategy">Resilience</string>
+    <string name="settings_routing_disabled">Disabled — only the primary provider is used</string>
+    <string name="settings_routing_needs_local">Set up a local server to enable fallback</string>
+    <string name="settings_routing_enabled">Cloud first → local fallback</string>
+    <string name="settings_fallback_enabled">Enable local fallback</string>
+    <string name="settings_fallback_desc">If the primary provider is unreachable or returns a 5xx error, automatically retry on your local server. 4xx errors (auth, bad request) are NOT retried.</string>
+    <string name="settings_fallback_target">Fallback target</string>
+    <string name="settings_fallback_needs_setup">Tap to configure a local server</string>
+    <string name="fallback_used_toast_cloud_local">⚠️ Cloud failed, used local server</string>
+    <string name="fallback_used_toast_local_cloud">⚠️ Local server failed, used cloud</string>
+    <string name="fallback_used_notification">⚠️ Primary failed, used fallback</string>
 </resources>

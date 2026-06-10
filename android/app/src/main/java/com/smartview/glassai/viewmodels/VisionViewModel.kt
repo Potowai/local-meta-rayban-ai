@@ -10,8 +10,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartview.glassai.managers.APIProviderManager
 import com.smartview.glassai.services.VisionAPIService
+import com.smartview.glassai.services.VisionResult
 import com.smartview.glassai.utils.APIKeyManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -46,6 +49,26 @@ class VisionViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _isAnalyzing = MutableStateFlow(false)
     val isAnalyzing: StateFlow<Boolean> = _isAnalyzing.asStateFlow()
+
+    /**
+     * Emits a one-shot signal (e.g. a localized string resource id) when the
+     * vision service falls back from the primary provider to the local
+     * server. The screen observes this and shows a Toast/Snackbar.
+     *
+     * Resource ids are int values so the UI layer can resolve them to
+     * translated strings without coupling this ViewModel to Android context.
+     */
+    private val _fallbackNotice = MutableSharedFlow<FallbackNotice>(extraBufferCapacity = 1)
+    val fallbackNotice: SharedFlow<FallbackNotice> = _fallbackNotice
+
+    /**
+     * Marker type for fallback events. Carries the primary and fallback
+     * display names so the UI can build a contextual message.
+     */
+    data class FallbackNotice(
+        val primaryName: String,
+        val fallbackName: String
+    )
 
     // Custom prompt for analysis
     private val _customPrompt = MutableStateFlow("")
@@ -90,11 +113,6 @@ class VisionViewModel(application: Application) : AndroidViewModel(application) 
         }
 
         if (visionService == null) {
-            if (!providerManager.hasAPIKey(apiKeyManager)) {
-                _errorMessage.value = "API Key not configured"
-                _viewState.value = ViewState.Error("API Key not configured")
-                return
-            }
             visionService = VisionAPIService(apiKeyManager, providerManager)
         }
 
@@ -105,18 +123,36 @@ class VisionViewModel(application: Application) : AndroidViewModel(application) 
             _isAnalyzing.value = true
 
             try {
-                val result = visionService!!.analyzeImage(image, analysisPrompt)
+                val primary = providerManager.currentPrimaryConfig(apiKeyManager)
+                val fallback = if (providerManager.fallbackEnabled.value) {
+                    providerManager.currentFallbackConfig(apiKeyManager)
+                } else null
 
-                result.fold(
-                    onSuccess = { description ->
-                        _analysisResult.value = description
-                        _viewState.value = ViewState.Result(description)
-                    },
-                    onFailure = { error ->
-                        _errorMessage.value = error.message
-                        _viewState.value = ViewState.Error(error.message ?: "Analysis failed")
-                    }
+                val result = visionService!!.analyzeWithFallback(
+                    image = image,
+                    prompt = analysisPrompt,
+                    primary = primary,
+                    fallback = fallback
                 )
+
+                when (result) {
+                    is VisionResult.Success -> {
+                        if (result.usedFallback) {
+                            _fallbackNotice.tryEmit(
+                                FallbackNotice(
+                                    primaryName = primary.displayName,
+                                    fallbackName = result.attemptedNameOrEmpty(fallback)
+                                )
+                            )
+                        }
+                        _analysisResult.value = result.text
+                        _viewState.value = ViewState.Result(result.text)
+                    }
+                    is VisionResult.Failure -> {
+                        _errorMessage.value = result.message
+                        _viewState.value = ViewState.Error(result.message)
+                    }
+                }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
                 _viewState.value = ViewState.Error(e.message ?: "Analysis failed")
@@ -202,3 +238,13 @@ class VisionViewModel(application: Application) : AndroidViewModel(application) 
         _capturedImage.value?.recycle()
     }
 }
+
+/**
+ * Helper extension: when the vision call succeeded via the fallback, the UI
+ * wants to know which provider actually answered. The [VisionResult.Success]
+ * payload doesn't carry it directly, so we ask the orchestrator (the
+ * ViewModel) to record it. We default to the empty string if the fallback
+ * itself was null (shouldn't happen in practice — guarded by the caller).
+ */
+private fun VisionResult.Success.attemptedNameOrEmpty(fallback: com.smartview.glassai.managers.ProviderConfig?): String =
+    fallback?.displayName.orEmpty()

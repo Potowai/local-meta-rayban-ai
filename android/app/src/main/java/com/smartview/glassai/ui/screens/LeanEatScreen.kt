@@ -41,10 +41,23 @@ fun LeanEatScreen(
     val nutritionResult by viewModel.nutritionResult.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // Update captured image when frame is available
     LaunchedEffect(currentFrame) {
         currentFrame?.let { viewModel.setCapturedImage(it) }
+    }
+
+    // Same fallback toast contract as VisionScreen.
+    LaunchedEffect(viewModel) {
+        viewModel.fallbackNotice.collect { notice ->
+            val msg = if (notice.primaryName.contains("Local", ignoreCase = true)) {
+                context.getString(R.string.fallback_used_toast_local_cloud)
+            } else {
+                context.getString(R.string.fallback_used_toast_cloud_local)
+            }
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
     Scaffold(

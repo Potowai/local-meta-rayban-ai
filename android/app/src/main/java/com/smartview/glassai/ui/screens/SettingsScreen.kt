@@ -288,6 +288,68 @@ fun SettingsScreen(
                 )
             }
 
+            // Vision Routing — primary + fallback orchestration
+            val fallbackEnabled by viewModel.fallbackEnabled.collectAsStateValue()
+            val fallbackReady by viewModel.fallbackReady.collectAsStateValue()
+            SettingsSection(title = stringResource(R.string.settings_routing_section)) {
+                // Status row: where the local fallback is, and whether it's reachable
+                SettingsItem(
+                    icon = Icons.Default.CompareArrows,
+                    title = stringResource(R.string.settings_routing_strategy),
+                    subtitle = when {
+                        !fallbackEnabled -> stringResource(R.string.settings_routing_disabled)
+                        !fallbackReady -> stringResource(R.string.settings_routing_needs_local)
+                        else -> stringResource(R.string.settings_routing_enabled)
+                    },
+                    subtitleColor = when {
+                        !fallbackEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                        !fallbackReady -> Error
+                        else -> Success
+                    },
+                    onClick = {}
+                )
+
+                // Toggle: enable / disable fallback
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppSpacing.medium, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_fallback_enabled),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_fallback_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = fallbackEnabled,
+                        onCheckedChange = { viewModel.setFallbackEnabled(it) }
+                    )
+                }
+
+                // Configure / inspect the local server (which is the implicit
+                // fallback target). Click opens the existing
+                // CustomServerSettingsScreen dialog.
+                if (fallbackEnabled) {
+                    SettingsItem(
+                        icon = Icons.Default.Dns,
+                        title = stringResource(R.string.settings_fallback_target),
+                        subtitle = if (fallbackReady)
+                            viewModel.fallbackTargetSummary()
+                        else
+                            stringResource(R.string.settings_fallback_needs_setup),
+                        subtitleColor = if (fallbackReady) Success else Error,
+                        onClick = { viewModel.showCustomServerDialog() }
+                    )
+                }
+            }
+
             // Live AI Settings Section
             SettingsSection(title = stringResource(R.string.settings_liveai_provider)) {
                 // Live AI Mode Settings

@@ -9,6 +9,7 @@ import com.google.gson.JsonObject
 import com.smartview.glassai.managers.AlibabaEndpoint
 import com.smartview.glassai.managers.APIProvider
 import com.smartview.glassai.managers.APIProviderManager
+import com.smartview.glassai.managers.ProviderConfig
 import com.smartview.glassai.managers.QuickVisionModeManager
 import com.smartview.glassai.utils.APIKeyManager
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -144,6 +148,143 @@ class VisionAPIService(
         }
     }
 
+    // MARK: - Analyze Image (with primary → fallback routing)
+
+    /**
+     * Analyze an image, trying the primary provider first and falling back to
+     * a secondary one if the primary call hits a network error or HTTP 5xx.
+     *
+     * 4xx errors (auth, bad request) are **not** retried — they indicate a
+     * user-side config problem (wrong API key, invalid model name) and
+     * falling back would mask it. The result surfaces the error immediately.
+     *
+     * @param primary   The provider to try first. Required.
+     * @param fallback  The provider to try on retryable failure. Nullable.
+     * @return A [VisionResult] describing the outcome.
+     */
+    suspend fun analyzeWithFallback(
+        image: Bitmap,
+        prompt: String,
+        primary: ProviderConfig,
+        fallback: ProviderConfig?
+    ): VisionResult = withContext(Dispatchers.IO) {
+        if (primary.requiresApiKey && primary.apiKey.isBlank()) {
+            // Surface the missing-key error directly. The user needs to fix
+            // their config; falling back wouldn't help.
+            return@withContext VisionResult.Failure(
+                message = "Missing API key for ${primary.displayName}",
+                attempted = listOf(primary),
+                usedFallback = false
+            )
+        }
+
+        val primaryResult = runOne(image, prompt, primary)
+        if (primaryResult is VisionResult.Success) {
+            return@withContext primaryResult
+        }
+        if (primaryResult is VisionResult.Failure) {
+            val shouldRetry = primaryResult.retryable && fallback != null && fallback != primary
+            if (!shouldRetry) {
+                return@withContext primaryResult
+            }
+            Log.w(TAG, "Primary ${primary.displayName} failed (retryable). Trying fallback ${fallback!!.displayName}")
+            val fallbackResult = runOne(image, prompt, fallback)
+            return@withContext when (fallbackResult) {
+                is VisionResult.Success -> fallbackResult.copy(usedFallback = true)
+                is VisionResult.Failure -> VisionResult.Failure(
+                    message = "Primary (${primary.displayName}) and fallback (${fallback!!.displayName}) both failed: ${fallbackResult.message}",
+                    attempted = listOf(primary, fallback!!),
+                    usedFallback = false
+                )
+            }
+        }
+        // Should be unreachable.
+        VisionResult.Failure("Unknown state", listOf(primary), usedFallback = false)
+    }
+
+    /**
+     * One-shot call to a single provider. Captures whether the failure was
+     * retryable (network/5xx) so the orchestrator can decide.
+     */
+    private suspend fun runOne(
+        image: Bitmap,
+        prompt: String,
+        config: ProviderConfig
+    ): VisionResult {
+        return try {
+            val base64Image = encodeImageToBase64(image)
+            val requestBody = buildRequestBodyFor(config, base64Image, prompt)
+            val url = "${config.baseURL.trimEnd('/')}/chat/completions"
+
+            val requestBuilder = Request.Builder()
+                .url(url)
+                .addHeader("Content-Type", "application/json")
+
+            if (config.apiKey.isNotBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer ${config.apiKey}")
+            }
+            if (config.provider == APIProvider.OPENROUTER) {
+                requestBuilder.addHeader("HTTP-Referer", "https://localmeta.app")
+                requestBuilder.addHeader("X-Title", "LocalMeta")
+            }
+
+            val request = requestBuilder
+                .post(requestBody.toRequestBody("application/json".toMediaType()))
+                .build()
+
+            Log.d(TAG, "Vision request → ${config.displayName} (${config.model}) at $url")
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            if (!response.isSuccessful) {
+                val code = response.code
+                val body = responseBody?.take(200) ?: ""
+                val retryable = code >= 500
+                Log.e(TAG, "${config.displayName} returned HTTP $code: $body")
+                return VisionResult.Failure(
+                    message = "HTTP $code from ${config.displayName}: $body",
+                    attempted = listOf(config),
+                    usedFallback = false,
+                    retryable = retryable
+                )
+            }
+
+            if (responseBody.isNullOrEmpty()) {
+                return VisionResult.Failure(
+                    "Empty response from ${config.displayName}",
+                    listOf(config),
+                    usedFallback = false,
+                    retryable = false
+                )
+            }
+
+            val result = parseResponse(responseBody)
+            if (result.isNullOrEmpty()) {
+                return VisionResult.Failure(
+                    "Could not parse response from ${config.displayName}",
+                    listOf(config),
+                    usedFallback = false,
+                    retryable = false
+                )
+            }
+
+            VisionResult.Success(text = result, usedFallback = false)
+        } catch (e: SocketTimeoutException) {
+            Log.w(TAG, "Timeout calling ${config.displayName}: ${e.message}")
+            VisionResult.Failure("Timeout: ${config.displayName}", listOf(config), usedFallback = false, retryable = true)
+        } catch (e: UnknownHostException) {
+            Log.w(TAG, "Unknown host calling ${config.displayName}: ${e.message}")
+            VisionResult.Failure("Unknown host: ${config.displayName}", listOf(config), usedFallback = false, retryable = true)
+        } catch (e: IOException) {
+            Log.w(TAG, "IO error calling ${config.displayName}: ${e.message}")
+            VisionResult.Failure("Network error: ${config.displayName}", listOf(config), usedFallback = false, retryable = true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error calling ${config.displayName}: ${e.message}")
+            VisionResult.Failure("Error: ${e.message ?: e::class.simpleName}", listOf(config), usedFallback = false, retryable = false)
+        }
+    }
+
     // MARK: - Quick Vision (for background recognition)
     // Uses QuickVisionModeManager to get the prompt based on selected mode
 
@@ -247,6 +388,42 @@ class VisionAPIService(
         return gson.toJson(request)
     }
 
+    /**
+     * Build a request body for a specific [ProviderConfig]. Used by the
+     * primary/fallback routing so each call carries the right model name.
+     */
+    private fun buildRequestBodyFor(
+        config: ProviderConfig,
+        base64Image: String,
+        prompt: String
+    ): String {
+        val messages = listOf(
+            mapOf(
+                "role" to "user",
+                "content" to listOf(
+                    mapOf(
+                        "type" to "image_url",
+                        "image_url" to mapOf(
+                            "url" to "data:image/jpeg;base64,$base64Image"
+                        )
+                    ),
+                    mapOf(
+                        "type" to "text",
+                        "text" to prompt
+                    )
+                )
+            )
+        )
+
+        val request = mapOf(
+            "model" to config.model,
+            "messages" to messages,
+            "max_tokens" to 2000
+        )
+
+        return gson.toJson(request)
+    }
+
     private fun parseResponse(responseBody: String): String? {
         return try {
             val json = gson.fromJson(responseBody, JsonObject::class.java)
@@ -270,4 +447,28 @@ sealed class VisionAPIError : Exception() {
     object InvalidResponse : VisionAPIError()
     object NoAPIKey : VisionAPIError()
     data class APIError(override val message: String) : VisionAPIError()
+}
+
+/**
+ * Result of [VisionAPIService.analyzeWithFallback].
+ *
+ * - [Success.text] is the model's response.
+ * - [Success.usedFallback] is `true` if the primary call failed and the
+ *   fallback succeeded.
+ * - [Failure] carries the error message, the configs that were attempted,
+ *   and whether the failure was retryable (so the caller can decide to
+ *   retry with a different fallback if available).
+ */
+sealed class VisionResult {
+    data class Success(
+        val text: String,
+        val usedFallback: Boolean
+    ) : VisionResult()
+
+    data class Failure(
+        val message: String,
+        val attempted: List<com.smartview.glassai.managers.ProviderConfig>,
+        val usedFallback: Boolean,
+        val retryable: Boolean = false
+    ) : VisionResult()
 }

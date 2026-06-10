@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import com.smartview.glassai.utils.APIKeyManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -352,6 +353,12 @@ class APIProviderManager private constructor(context: Context) {
         private const val KEY_CUSTOM_BASE_URL = "custom_base_url"
         private const val KEY_CUSTOM_MODEL = "custom_model"
 
+        // Fallback provider toggle. Default: enabled (true). When true, if the
+        // primary provider call fails on a network error or HTTP 5xx, the app
+        // automatically retries with the local server. 4xx errors (auth, bad
+        // request) are surfaced to the user without falling back.
+        private const val KEY_FALLBACK_ENABLED = "fallback_enabled"
+
         @Volatile
         private var instance: APIProviderManager? = null
 
@@ -549,6 +556,94 @@ class APIProviderManager private constructor(context: Context) {
         _customModel.value = model
         prefs.edit().putString(KEY_CUSTOM_MODEL, model).apply()
     }
+
+    // MARK: - Fallback provider
+
+    private val _fallbackEnabled = MutableStateFlow(
+        prefs.getBoolean(KEY_FALLBACK_ENABLED, true)
+    )
+
+    /**
+     * When `true`, vision requests automatically retry on the local server
+     * (CUSTOM provider) if the primary call fails with a network error or
+     * HTTP status >= 500. 4xx errors never trigger a fallback — the user
+     * needs to fix their config (wrong key, etc.).
+     *
+     * Default: true. The user can disable in Settings → Vision routing.
+     */
+    val fallbackEnabled: StateFlow<Boolean> = _fallbackEnabled
+
+    fun setFallbackEnabled(enabled: Boolean) {
+        _fallbackEnabled.value = enabled
+        prefs.edit().putBoolean(KEY_FALLBACK_ENABLED, enabled).apply()
+    }
+
+    // MARK: - ProviderConfig builders (used by the network layer)
+
+    /**
+     * Build a [ProviderConfig] for the currently selected primary provider.
+     *
+     * For cloud providers (ALIBABA / OPENROUTER), the API key is read from
+     * the encrypted prefs. If the user hasn't set one, the returned config
+     * will have an empty `apiKey`, which the network layer will treat as an
+     * auth error (4xx, non-retryable).
+     *
+     * For the local server (CUSTOM), the URL/model come from the user's
+     * preset configuration and the API key is optional.
+     */
+    fun currentPrimaryConfig(apiKeyManager: APIKeyManager): ProviderConfig {
+        val provider = _currentProvider.value
+        val endpoint = _alibabaEndpoint.value
+        val baseURL = when (provider) {
+            APIProvider.ALIBABA -> endpoint.baseURL
+            APIProvider.OPENROUTER -> "https://openrouter.ai/api/v1"
+            APIProvider.CUSTOM -> _customBaseURL.value
+        }
+        val model = when (provider) {
+            APIProvider.CUSTOM -> _customModel.value
+            else -> _selectedModel.value
+        }
+        val key = when (provider) {
+            APIProvider.ALIBABA -> apiKeyManager.getAPIKey(provider, endpoint) ?: ""
+            APIProvider.OPENROUTER -> apiKeyManager.getAPIKey(provider) ?: ""
+            APIProvider.CUSTOM -> apiKeyManager.getCustomAPIKey() ?: ""
+        }
+        return ProviderConfig(
+            provider = provider,
+            baseURL = baseURL,
+            model = model,
+            apiKey = key,
+            alibabaEndpoint = if (provider == APIProvider.ALIBABA) endpoint else null
+        )
+    }
+
+    /**
+     * Build a [ProviderConfig] for the local server, regardless of what the
+     * current "primary" provider is. Returns `null` only if the user hasn't
+     * configured a local server at all (no preset, no URL).
+     *
+     * Used by the vision network layer as the implicit fallback target
+     * when [fallbackEnabled] is true.
+     */
+    fun currentFallbackConfig(apiKeyManager: APIKeyManager): ProviderConfig? {
+        val url = _customBaseURL.value
+        if (url.isBlank()) return null
+        val model = _customModel.value.ifBlank { LocalServerPreset.OLLAMA.defaultModel }
+        val key = apiKeyManager.getCustomAPIKey() ?: ""
+        return ProviderConfig(
+            provider = APIProvider.CUSTOM,
+            baseURL = url,
+            model = model,
+            apiKey = key
+        )
+    }
+
+    /**
+     * True if a fallback config can actually be built (local server is
+     * configured). Independent of [fallbackEnabled] — that's a user toggle.
+     */
+    fun hasUsableFallback(apiKeyManager: APIKeyManager): Boolean =
+        currentFallbackConfig(apiKeyManager) != null
 
     // MARK: - Live AI Configuration
 

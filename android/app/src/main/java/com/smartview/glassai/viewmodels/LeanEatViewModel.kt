@@ -8,12 +8,14 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.smartview.glassai.managers.APIProvider
 import com.smartview.glassai.managers.APIProviderManager
 import com.smartview.glassai.models.FoodNutritionResponse
+import com.smartview.glassai.services.LeanEatResult
 import com.smartview.glassai.services.LeanEatService
 import com.smartview.glassai.utils.APIKeyManager
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -49,17 +51,24 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
     private val _isAnalyzing = MutableStateFlow(false)
     val isAnalyzing: StateFlow<Boolean> = _isAnalyzing.asStateFlow()
 
+    /**
+     * Emits a one-shot signal when the nutrition call fell back from the
+     * primary to the local server. The screen observes this and shows a
+     * Toast/Snackbar. Same contract as [VisionViewModel.fallbackNotice].
+     */
+    private val _fallbackNotice = MutableSharedFlow<VisionViewModel.FallbackNotice>(extraBufferCapacity = 1)
+    val fallbackNotice: SharedFlow<VisionViewModel.FallbackNotice> = _fallbackNotice
+
     init {
         initializeService()
     }
 
     private fun initializeService() {
-        val apiKey = apiKeyManager.getAPIKey() ?: ""
-        // For local providers (no API key required) or when one is configured,
-        // we can always instantiate the service.
-        if (apiKey.isNotBlank() || providerManager.currentProvider.value == APIProvider.CUSTOM) {
-            leanEatService = LeanEatService(apiKey, providerManager)
-        }
+        // LeanEatService is now called per-request with explicit configs, so
+        // we no longer need to construct a stateful instance ahead of time.
+        // Keep the field for backward compatibility (some legacy code paths
+        // still reference it) but it's safe to leave null.
+        leanEatService = null
     }
 
     fun setCapturedImage(bitmap: Bitmap) {
@@ -75,34 +84,45 @@ class LeanEatViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        if (leanEatService == null) {
-            val apiKey = apiKeyManager.getAPIKey() ?: ""
-            val isCustom = providerManager.currentProvider.value == APIProvider.CUSTOM
-            if (apiKey.isBlank() && !isCustom) {
-                _errorMessage.value = "API Key not configured"
-                _viewState.value = ViewState.Error("API Key not configured")
-                return
-            }
-            leanEatService = LeanEatService(apiKey, providerManager)
-        }
-
         viewModelScope.launch {
             _viewState.value = ViewState.Analyzing
             _isAnalyzing.value = true
 
             try {
-                val result = leanEatService!!.analyzeFood(image)
+                val primary = providerManager.currentPrimaryConfig(apiKeyManager)
+                val fallback = if (providerManager.fallbackEnabled.value) {
+                    providerManager.currentFallbackConfig(apiKeyManager)
+                } else null
 
-                result.fold(
-                    onSuccess = { response ->
-                        _nutritionResult.value = response
-                        _viewState.value = ViewState.Result(response)
-                    },
-                    onFailure = { error ->
-                        _errorMessage.value = error.message
-                        _viewState.value = ViewState.Error(error.message ?: "Analysis failed")
-                    }
+                val service = leanEatService ?: LeanEatService(
+                    apiKey = primary.apiKey,
+                    providerManager = providerManager
                 )
+
+                val result = service.analyzeFoodWithFallback(
+                    image = image,
+                    primary = primary,
+                    fallback = fallback
+                )
+
+                when (result) {
+                    is LeanEatResult.Success -> {
+                        if (result.usedFallback) {
+                            _fallbackNotice.tryEmit(
+                                VisionViewModel.FallbackNotice(
+                                    primaryName = primary.displayName,
+                                    fallbackName = fallback?.displayName.orEmpty()
+                                )
+                            )
+                        }
+                        _nutritionResult.value = result.response
+                        _viewState.value = ViewState.Result(result.response)
+                    }
+                    is LeanEatResult.Failure -> {
+                        _errorMessage.value = result.message
+                        _viewState.value = ViewState.Error(result.message)
+                    }
+                }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
                 _viewState.value = ViewState.Error(e.message ?: "Analysis failed")

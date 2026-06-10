@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.smartview.glassai.managers.APIProvider
 import com.smartview.glassai.managers.APIProviderManager
+import com.smartview.glassai.managers.ProviderConfig
 import com.smartview.glassai.models.FoodItem
 import com.smartview.glassai.models.FoodNutritionResponse
 import com.smartview.glassai.utils.APIKeyManager
@@ -16,6 +17,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -130,6 +134,101 @@ class LeanEatService(
         }
     }
 
+    // MARK: - Primary → fallback routing (parallel to VisionAPIService)
+
+    /**
+     * Same primary/fallback contract as [VisionAPIService.analyzeWithFallback].
+     * 4xx is surfaced, 5xx and network errors retry against the fallback.
+     */
+    suspend fun analyzeFoodWithFallback(
+        image: Bitmap,
+        primary: ProviderConfig,
+        fallback: ProviderConfig?
+    ): LeanEatResult = withContext(Dispatchers.IO) {
+        if (primary.requiresApiKey && primary.apiKey.isBlank()) {
+            return@withContext LeanEatResult.Failure(
+                "Missing API key for ${primary.displayName}",
+                listOf(primary),
+                usedFallback = false
+            )
+        }
+
+        val primaryResult = runOne(image, primary)
+        if (primaryResult is LeanEatResult.Success) {
+            return@withContext primaryResult
+        }
+        if (primaryResult is LeanEatResult.Failure) {
+            val shouldRetry = primaryResult.retryable && fallback != null && fallback != primary
+            if (!shouldRetry) {
+                return@withContext primaryResult
+            }
+            val fallbackResult = runOne(image, fallback!!)
+            return@withContext when (fallbackResult) {
+                is LeanEatResult.Success -> fallbackResult.copy(usedFallback = true)
+                is LeanEatResult.Failure -> LeanEatResult.Failure(
+                    "Primary (${primary.displayName}) and fallback (${fallback!!.displayName}) both failed: ${fallbackResult.message}",
+                    listOf(primary, fallback!!),
+                    usedFallback = false
+                )
+            }
+        }
+        LeanEatResult.Failure("Unknown state", listOf(primary), usedFallback = false)
+    }
+
+    private suspend fun runOne(
+        image: Bitmap,
+        config: ProviderConfig
+    ): LeanEatResult {
+        return try {
+            val base64Image = encodeImageToBase64(image)
+            val requestBody = buildRequestBodyFor(config, base64Image)
+            val url = "${config.baseURL.trimEnd('/')}/chat/completions"
+
+            val requestBuilder = Request.Builder()
+                .url(url)
+                .addHeader("Content-Type", "application/json")
+
+            if (config.apiKey.isNotBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer ${config.apiKey}")
+            }
+
+            val request = requestBuilder
+                .post(requestBody.toRequestBody("application/json".toMediaType()))
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            if (!response.isSuccessful) {
+                val code = response.code
+                val body = responseBody?.take(200) ?: ""
+                val retryable = code >= 500
+                return LeanEatResult.Failure(
+                    "HTTP $code from ${config.displayName}: $body",
+                    listOf(config),
+                    usedFallback = false,
+                    retryable = retryable
+                )
+            }
+            if (responseBody.isNullOrEmpty()) {
+                return LeanEatResult.Failure("Empty response from ${config.displayName}", listOf(config), usedFallback = false)
+            }
+            val parsed = parseNutritionResponse(responseBody)
+            if (parsed == null) {
+                return LeanEatResult.Failure("Could not parse nutrition response from ${config.displayName}", listOf(config), usedFallback = false)
+            }
+            LeanEatResult.Success(parsed, usedFallback = false)
+        } catch (e: SocketTimeoutException) {
+            LeanEatResult.Failure("Timeout: ${config.displayName}", listOf(config), usedFallback = false, retryable = true)
+        } catch (e: UnknownHostException) {
+            LeanEatResult.Failure("Unknown host: ${config.displayName}", listOf(config), usedFallback = false, retryable = true)
+        } catch (e: IOException) {
+            LeanEatResult.Failure("Network error: ${config.displayName}", listOf(config), usedFallback = false, retryable = true)
+        } catch (e: Exception) {
+            LeanEatResult.Failure("Error: ${e.message ?: e::class.simpleName}", listOf(config), usedFallback = false)
+        }
+    }
+
     private fun encodeImageToBase64(bitmap: Bitmap): String {
         val outputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
@@ -158,6 +257,37 @@ class LeanEatService(
 
         val request = mapOf(
             "model" to effectiveModel,
+            "messages" to messages,
+            "max_tokens" to 2000
+        )
+
+        return gson.toJson(request)
+    }
+
+    private fun buildRequestBodyFor(
+        config: ProviderConfig,
+        base64Image: String
+    ): String {
+        val messages = listOf(
+            mapOf(
+                "role" to "user",
+                "content" to listOf(
+                    mapOf(
+                        "type" to "image_url",
+                        "image_url" to mapOf(
+                            "url" to "data:image/jpeg;base64,$base64Image"
+                        )
+                    ),
+                    mapOf(
+                        "type" to "text",
+                        "text" to NUTRITION_PROMPT
+                    )
+                )
+            )
+        )
+
+        val request = mapOf(
+            "model" to config.model,
             "messages" to messages,
             "max_tokens" to 2000
         )
@@ -237,4 +367,22 @@ class LeanEatService(
             null
         }
     }
+}
+
+/**
+ * Result of [LeanEatService.analyzeFoodWithFallback]. Same contract as
+ * [VisionResult] from [VisionAPIService].
+ */
+sealed class LeanEatResult {
+    data class Success(
+        val response: FoodNutritionResponse,
+        val usedFallback: Boolean
+    ) : LeanEatResult()
+
+    data class Failure(
+        val message: String,
+        val attempted: List<ProviderConfig>,
+        val usedFallback: Boolean,
+        val retryable: Boolean = false
+    ) : LeanEatResult()
 }

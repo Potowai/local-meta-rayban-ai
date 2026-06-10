@@ -18,8 +18,11 @@ import com.smartview.glassai.utils.APIKeyManager
 import com.smartview.glassai.utils.OutputLanguage
 import com.smartview.glassai.utils.StreamQuality
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -439,6 +442,39 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun hideCustomServerDialog() {
         _showCustomServerDialog.value = false
+    }
+
+    // MARK: - Fallback routing
+
+    /**
+     * Pass-through to [APIProviderManager.fallbackEnabled]. The screen binds
+     * the toggle directly to this flow.
+     */
+    val fallbackEnabled: StateFlow<Boolean> get() = providerManager.fallbackEnabled
+
+    fun setFallbackEnabled(enabled: Boolean) {
+        providerManager.setFallbackEnabled(enabled)
+    }
+
+    /**
+     * A one-shot derived flow that says "is the fallback usable right now?".
+     * True iff: the toggle is on AND the local server config produces a
+     * valid [com.smartview.glassai.managers.ProviderConfig].
+     */
+    val fallbackReady: StateFlow<Boolean> = providerManager.fallbackEnabled
+        .map { enabled ->
+            enabled && providerManager.hasUsableFallback(apiKeyManager)
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /**
+     * Returns a short human-readable summary of the configured fallback
+     * target. E.g. "Ollama — http://localhost:11434/v1 — llava".
+     */
+    fun fallbackTargetSummary(): String {
+        val cfg = providerManager.currentFallbackConfig(apiKeyManager) ?: return "—"
+        val presetName = providerManager.customPreset.value.displayName
+        return "$presetName — ${cfg.baseURL} — ${cfg.model}"
     }
 
     fun saveCustomServerConfig(

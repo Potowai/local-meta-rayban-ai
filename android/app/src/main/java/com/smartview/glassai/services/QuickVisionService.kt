@@ -272,14 +272,32 @@ class QuickVisionService : Service(), TextToSpeech.OnInitListener {
                     updateNotification(getLocalizedString("analyzing"))
 
                     val language = apiKeyManager.getOutputLanguage()
-                    val result = visionService.quickVision(image, language)
+                    val prompt = modeManager.getPrompt()
+                    val primary = providerManager.currentPrimaryConfig(apiKeyManager)
+                    val fallback = if (providerManager.fallbackEnabled.value) {
+                        providerManager.currentFallbackConfig(apiKeyManager)
+                    } else null
 
-                    result.fold(
-                        onSuccess = { description ->
+                    val result = visionService.analyzeWithFallback(
+                        image = image,
+                        prompt = prompt,
+                        primary = primary,
+                        fallback = fallback
+                    )
+
+                    when (result) {
+                        is com.smartview.glassai.services.VisionResult.Success -> {
+                            val description = result.text
                             Log.d(TAG, "Analysis result: $description")
 
+                            if (result.usedFallback) {
+                                Log.w(TAG, "Primary ${primary.displayName} failed; fallback ${fallback?.displayName} succeeded")
+                                updateNotification(
+                                    getLocalizedString("fallback_used_notification")
+                                )
+                            }
+
                             // Save record with thumbnail
-                            val prompt = modeManager.getPrompt()
                             val currentMode = modeManager.currentMode.value
                             val visionModel = providerManager.selectedModel.value
                             quickVisionStorage.saveRecord(
@@ -294,18 +312,20 @@ class QuickVisionService : Service(), TextToSpeech.OnInitListener {
                             broadcastResult(description)
                             broadcastStatus("complete")
                             speakAndWait(description, useOutputLocale = true)  // AI回复使用输出语言
-                        },
-                        onFailure = { error ->
-                            Log.e(TAG, "Analysis failed: ${error.message}")
-                            speak(getLocalizedString("analysis_failed"))
-                            broadcastError(error.message ?: "Unknown error")
-                            broadcastStatus("error")
                         }
-                    )
+                        is com.smartview.glassai.services.VisionResult.Failure -> {
+                            Log.e(TAG, "Analysis failed: ${result.message}")
+                            val errMsg = getLocalizedString("error") + ": " + result.message
+                            broadcastError(errMsg)
+                            broadcastStatus("error")
+                            updateNotification(errMsg)
+                        }
+                    }
                 } else {
                     Log.e(TAG, "No frame captured")
                     speak(getLocalizedString("no_image"))
                     broadcastStatus("error")
+                    updateNotification(getLocalizedString("no_image"))
                 }
 
                 delay(500)
