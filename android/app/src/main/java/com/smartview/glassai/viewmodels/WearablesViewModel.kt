@@ -24,7 +24,9 @@ import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.meta.wearable.dat.core.types.RegistrationState
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -79,6 +81,25 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _currentFrame = MutableStateFlow<Bitmap?>(null)
     val currentFrame: StateFlow<Bitmap?> = _currentFrame.asStateFlow()
+
+    /**
+     * Emits when the UI requested the glasses registration / unregistration
+     * to start. The host [android.app.Activity] collects this flow and
+     * forwards it to the Meta SDK with itself as the required [Activity]
+     * context.
+     *
+     * Why: the Meta DAT SDK 0.4.0 requires an [Activity] for
+     * `Wearables.startRegistration` / `startUnregistration`, not an
+     * [Application]. Passing the latter crashes the SDK. ViewModels don't
+     * have a direct Activity reference (anti-pattern), so the activity
+     * handles the actual SDK call and the ViewModel just signals intent.
+     */
+    sealed class RegistrationRequest {
+        object Start : RegistrationRequest()
+        object Stop : RegistrationRequest()
+    }
+    private val _registrationRequest = MutableSharedFlow<RegistrationRequest>(extraBufferCapacity = 1)
+    val registrationRequest: SharedFlow<RegistrationRequest> = _registrationRequest
 
     private val _capturedPhoto = MutableStateFlow<Bitmap?>(null)
     val capturedPhoto: StateFlow<Bitmap?> = _capturedPhoto.asStateFlow()
@@ -188,13 +209,13 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun startRegistration() {
-        Log.d(TAG, "📝 Starting registration")
-        Wearables.startRegistration(getApplication())
+        Log.d(TAG, "📝 Requesting registration (handled by host Activity)")
+        _registrationRequest.tryEmit(RegistrationRequest.Start)
     }
 
     fun startUnregistration() {
-        Log.d(TAG, "📝 Starting unregistration")
-        Wearables.startUnregistration(getApplication())
+        Log.d(TAG, "📝 Requesting unregistration (handled by host Activity)")
+        _registrationRequest.tryEmit(RegistrationRequest.Stop)
     }
 
     fun disconnect() {

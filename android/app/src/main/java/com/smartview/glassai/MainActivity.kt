@@ -3,6 +3,7 @@ package com.smartview.glassai
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
@@ -22,6 +24,7 @@ import com.smartview.glassai.ui.theme.LocalMetaTheme
 import com.smartview.glassai.viewmodels.WearablesViewModel
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -124,5 +127,31 @@ class MainActivity : AppCompatActivity() {
 
         // Start observing Wearables state after SDK is initialized
         wearablesViewModel.startMonitoring()
+
+        // Bridge the ViewModel's "I want to (un)register" requests to the
+        // actual SDK call. The SDK 0.4.0 requires an Activity context, and
+        // ViewModels shouldn't hold one — so the Activity handles the call.
+        lifecycleScope.launch {
+            wearablesViewModel.registrationRequest.collect { request ->
+                when (request) {
+                    is WearablesViewModel.RegistrationRequest.Start -> {
+                        Log.d("MainActivity", "🔌 Wearables.startRegistration(this)")
+                        try {
+                            Wearables.startRegistration(this@MainActivity)
+                        } catch (t: Throwable) {
+                            Log.e("MainActivity", "startRegistration failed: ${t.message}", t)
+                        }
+                    }
+                    is WearablesViewModel.RegistrationRequest.Stop -> {
+                        Log.d("MainActivity", "🔌 Wearables.startUnregistration(this)")
+                        try {
+                            Wearables.startUnregistration(this@MainActivity)
+                        } catch (t: Throwable) {
+                            Log.e("MainActivity", "startUnregistration failed: ${t.message}", t)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
