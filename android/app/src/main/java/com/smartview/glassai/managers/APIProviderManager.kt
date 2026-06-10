@@ -67,7 +67,44 @@ enum class LocalServerPreset(val id: String) {
             CUSTOM -> null
         }
 
+    /**
+     * Placeholder API key pre-filled into the Settings UI for this preset.
+     *
+     * - `null`  → no key, leave the field empty.
+     * - `""`    → empty value (same as null in practice).
+     * - any other string → a "dummy" key shown in the field as a hint. The
+     *   user is expected to replace it with their real one (or clear it).
+     *
+     * Ollama's official stance is "no auth required for local", so we suggest
+     * a friendly placeholder rather than an empty field, which makes the
+     * "this is optional" message less ambiguous for first-time users.
+     */
+    val defaultApiKey: String?
+        get() = when (this) {
+            OLLAMA -> "ollama"
+            LLAMACPP -> "llamacpp"
+            LMSTUDIO -> "lmstudio"
+            VLLM -> "vllm"
+            CUSTOM -> null
+        }
+
+    /**
+     * Human-readable note for the [defaultApiKey] placeholder, shown under
+     * the API Key field in the Settings UI. Null when no key is suggested.
+     */
+    val apiKeyHint: String?
+        get() = when (this) {
+            OLLAMA -> "Local Ollama doesn't require a key, but we pre-fill a placeholder for clarity. Clear or replace it freely."
+            LLAMACPP -> "llama.cpp server doesn't require a key by default. Pre-filled placeholder, edit as needed."
+            LMSTUDIO -> "LM Studio doesn't require a key. Pre-filled placeholder, edit as needed."
+            VLLM -> "vLLM doesn't require a key. Pre-filled placeholder, edit as needed."
+            CUSTOM -> null
+        }
+
     companion object {
+        /** The default preset used on first install (CUSTOM points back to OLLAMA's defaults). */
+        val DEFAULT = OLLAMA
+
         fun fromId(id: String?): LocalServerPreset = entries.find { it.id == id } ?: OLLAMA
     }
 }
@@ -329,7 +366,7 @@ class APIProviderManager private constructor(context: Context) {
 
         val staticCurrentProvider: APIProvider
             get() {
-                val id = prefs?.getString(KEY_PROVIDER, "alibaba") ?: "alibaba"
+                val id = prefs?.getString(KEY_PROVIDER, "custom") ?: "custom"
                 return APIProvider.fromId(id)
             }
 
@@ -390,7 +427,7 @@ class APIProviderManager private constructor(context: Context) {
 
     // Vision API Provider
     private val _currentProvider = MutableStateFlow(
-        APIProvider.fromId(prefs.getString(KEY_PROVIDER, "alibaba") ?: "alibaba")
+        APIProvider.fromId(prefs.getString(KEY_PROVIDER, "custom") ?: "custom")
     )
     val currentProvider: StateFlow<APIProvider> = _currentProvider
 

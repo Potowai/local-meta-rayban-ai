@@ -121,6 +121,13 @@ fun CustomServerSettingsContent(
                             if (modelName.isBlank() || modelName == LocalServerPreset.OLLAMA.defaultModel || modelName == savedModel) {
                                 modelName = p.defaultModel
                             }
+                            // Pre-fill a "dummy" placeholder API key so the field
+                            // doesn't look broken. The server doesn't actually
+                            // need it. The user can clear or replace it freely.
+                            val placeholder = p.defaultApiKey
+                            if (placeholder != null && (apiKey.isBlank() || apiKey in LocalServerPreset.entries.mapNotNull { it.defaultApiKey })) {
+                                apiKey = placeholder
+                            }
                         }
                         testResult = null
                     }
@@ -193,6 +200,15 @@ fun CustomServerSettingsContent(
             singleLine = true,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            supportingText = {
+                val hint = selectedPreset.apiKeyHint
+                if (!hint.isNullOrBlank()) {
+                    Text(
+                        text = hint,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
