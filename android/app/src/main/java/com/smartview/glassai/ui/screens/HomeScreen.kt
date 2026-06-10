@@ -65,6 +65,25 @@ fun HomeScreen(
         )
     }
 
+    // AI provider status check
+    var aiStatus by remember { mutableStateOf<com.smartview.glassai.managers.ProviderStatus?>(null) }
+    var isCheckingAi by remember { mutableStateOf(false) }
+
+    // Check AI status on launch and every time the screen recomposes
+    LaunchedEffect(Unit) {
+        if (!isCheckingAi) {
+            isCheckingAi = true
+            try {
+                val pm = com.smartview.glassai.managers.APIProviderManager.getInstance(context)
+                aiStatus = com.smartview.glassai.managers.ProviderStatusChecker.checkPrimary(pm, apiKeyManager)
+            } catch (_: Exception) {
+                aiStatus = null
+            } finally {
+                isCheckingAi = false
+            }
+        }
+    }
+
     // API Key dialog state
     var showApiKeyDialog by remember { mutableStateOf(false) }
     // Device not connected dialog state
@@ -272,6 +291,29 @@ fun HomeScreen(
                 connectionState = connectionState,
                 onConnect = { wearablesViewModel.startDeviceSearch() },
                 onDisconnect = { wearablesViewModel.disconnect() },
+                modifier = Modifier.padding(horizontal = AppSpacing.large)
+            )
+
+            Spacer(modifier = Modifier.height(AppSpacing.medium))
+
+            // AI Provider Status Card
+            AiStatusCard(
+                status = aiStatus,
+                onRefresh = {
+                    scope.launch {
+                        if (!isCheckingAi) {
+                            isCheckingAi = true
+                            try {
+                                val pm = com.smartview.glassai.managers.APIProviderManager.getInstance(context)
+                                aiStatus = com.smartview.glassai.managers.ProviderStatusChecker.checkPrimary(pm, apiKeyManager)
+                            } catch (_: Exception) {
+                                aiStatus = null
+                            } finally {
+                                isCheckingAi = false
+                            }
+                        }
+                    }
+                },
                 modifier = Modifier.padding(horizontal = AppSpacing.large)
             )
 
@@ -807,6 +849,95 @@ private fun DeviceStatusCard(
                         Text(stringResource(R.string.connect_glasses))
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AiStatusCard(
+    status: com.smartview.glassai.managers.ProviderStatus?,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(AppRadius.large),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AppSpacing.medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when (status) {
+                            is com.smartview.glassai.managers.ProviderStatus.Online -> Success
+                            is com.smartview.glassai.managers.ProviderStatus.Offline -> Error
+                            else -> MaterialTheme.colorScheme.outline
+                        }
+                    )
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "AI Provider",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                when (status) {
+                    is com.smartview.glassai.managers.ProviderStatus.Online -> {
+                        Text(
+                            text = "${status.providerName} • ${status.model} • ${status.latencyMs}ms",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                    is com.smartview.glassai.managers.ProviderStatus.Offline -> {
+                        Text(
+                            text = "${status.providerName} — ${status.reason}",
+                            fontSize = 12.sp,
+                            color = Error,
+                            maxLines = 1
+                        )
+                    }
+                    null -> {
+                        Text(
+                            text = "Checking…",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    is com.smartview.glassai.managers.ProviderStatus.NotConfigured -> {
+                        Text(
+                            text = "No provider configured",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            IconButton(
+                onClick = onRefresh,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Refresh",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }
