@@ -46,7 +46,8 @@ fun LeanEatScreen(
     viewModel: LeanEatViewModel = viewModel(),
     capturedPhoto: Bitmap? = null,
     onBackClick: () -> Unit,
-    onTakePhoto: () -> Unit
+    onTakePhoto: () -> Unit,
+    onPhotoConsumed: () -> Unit = {}
 ) {
     val viewState by viewModel.viewState.collectAsState()
     val capturedImage by viewModel.capturedImage.collectAsState()
@@ -64,6 +65,7 @@ fun LeanEatScreen(
                 viewState is LeanEatViewModel.ViewState.Error
             ) {
                 viewModel.setCapturedImage(photo)
+                onPhotoConsumed()
             }
         }
     }

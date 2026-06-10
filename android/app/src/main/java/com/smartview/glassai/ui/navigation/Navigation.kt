@@ -19,7 +19,10 @@ import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.smartview.glassai.R
 import com.smartview.glassai.ui.screens.*
+import com.smartview.glassai.ui.theme.Primary
 import com.smartview.glassai.viewmodels.WearablesViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
@@ -147,13 +150,24 @@ fun LocalMetaNavigation(
 
             composable(Screen.LeanEat.route) {
                 val capturedPhoto by wearablesViewModel.capturedPhoto.collectAsState()
+                val scope = rememberCoroutineScope()
                 LeanEatScreen(
                     capturedPhoto = capturedPhoto,
                     onBackClick = {
                         navController.popBackStack()
                     },
                     onTakePhoto = {
-                        wearablesViewModel.takePhoto()
+                        scope.launch {
+                            // If not streaming, start stream then capture
+                            if (wearablesViewModel.streamState.value !is com.smartview.glassai.viewmodels.WearablesViewModel.StreamState.Streaming) {
+                                wearablesViewModel.startStream()
+                                delay(2000)
+                            }
+                            wearablesViewModel.takePhoto()
+                        }
+                    },
+                    onPhotoConsumed = {
+                        wearablesViewModel.clearCapturedPhoto()
                     }
                 )
             }
