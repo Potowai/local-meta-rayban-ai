@@ -89,6 +89,36 @@ class MainActivity : AppCompatActivity() {
         // Check and request permissions
         checkAndRequestPermissions()
 
+        // Bridge the ViewModel's "I want to (un)register" requests to the
+        // actual SDK call. The SDK 0.4.0 requires an Activity context, and
+        // ViewModels shouldn't hold one — so the Activity handles the call.
+        // This must run regardless of permission state: if the user clicks
+        // Connect before granting permissions, the SDK call will simply
+        // fail inside the try/catch and log a warning, but the event is
+        // never lost.
+        lifecycleScope.launch {
+            wearablesViewModel.registrationRequest.collect { request ->
+                when (request) {
+                    is WearablesViewModel.RegistrationRequest.Start -> {
+                        Log.d("MainActivity", "🔌 Wearables.startRegistration(this)")
+                        try {
+                            Wearables.startRegistration(this@MainActivity)
+                        } catch (t: Throwable) {
+                            Log.e("MainActivity", "startRegistration failed: ${t.message}", t)
+                        }
+                    }
+                    is WearablesViewModel.RegistrationRequest.Stop -> {
+                        Log.d("MainActivity", "🔌 Wearables.startUnregistration(this)")
+                        try {
+                            Wearables.startUnregistration(this@MainActivity)
+                        } catch (t: Throwable) {
+                            Log.e("MainActivity", "startUnregistration failed: ${t.message}", t)
+                        }
+                    }
+                }
+            }
+        }
+
         setContent {
             LocalMetaTheme {
                 Surface(
@@ -127,31 +157,5 @@ class MainActivity : AppCompatActivity() {
 
         // Start observing Wearables state after SDK is initialized
         wearablesViewModel.startMonitoring()
-
-        // Bridge the ViewModel's "I want to (un)register" requests to the
-        // actual SDK call. The SDK 0.4.0 requires an Activity context, and
-        // ViewModels shouldn't hold one — so the Activity handles the call.
-        lifecycleScope.launch {
-            wearablesViewModel.registrationRequest.collect { request ->
-                when (request) {
-                    is WearablesViewModel.RegistrationRequest.Start -> {
-                        Log.d("MainActivity", "🔌 Wearables.startRegistration(this)")
-                        try {
-                            Wearables.startRegistration(this@MainActivity)
-                        } catch (t: Throwable) {
-                            Log.e("MainActivity", "startRegistration failed: ${t.message}", t)
-                        }
-                    }
-                    is WearablesViewModel.RegistrationRequest.Stop -> {
-                        Log.d("MainActivity", "🔌 Wearables.startUnregistration(this)")
-                        try {
-                            Wearables.startUnregistration(this@MainActivity)
-                        } catch (t: Throwable) {
-                            Log.e("MainActivity", "startUnregistration failed: ${t.message}", t)
-                        }
-                    }
-                }
-            }
-        }
     }
 }
