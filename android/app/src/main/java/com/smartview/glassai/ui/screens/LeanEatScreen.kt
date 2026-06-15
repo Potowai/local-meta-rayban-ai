@@ -81,6 +81,15 @@ fun LeanEatScreen(
         }
     }
 
+    // Auto-analyze when a photo is captured (skip the manual "Analyze" tap)
+    LaunchedEffect(viewState, capturedImage) {
+        if (viewState is LeanEatViewModel.ViewState.Capturing && capturedImage != null) {
+            // Small delay so the user can see the captured image first
+            kotlinx.coroutines.delay(500)
+            viewModel.analyzeFood()
+        }
+    }
+
     // Fallback toast
     LaunchedEffect(viewModel) {
         viewModel.fallbackNotice.collect { notice ->

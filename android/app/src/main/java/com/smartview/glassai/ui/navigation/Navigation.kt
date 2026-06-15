@@ -150,9 +150,14 @@ fun LocalMetaNavigation(
             composable(Screen.LeanEat.route) {
                 val capturedPhoto by wearablesViewModel.capturedPhoto.collectAsState()
                 val scope = rememberCoroutineScope()
+                val hasActiveDevice by wearablesViewModel.hasActiveDevice.collectAsState()
                 LeanEatScreen(
                     capturedPhoto = capturedPhoto,
                     onBackClick = {
+                        // Stop glasses stream when leaving LeanEat
+                        if (wearablesViewModel.streamState.value is com.smartview.glassai.viewmodels.WearablesViewModel.StreamState.Streaming) {
+                            wearablesViewModel.stopStream()
+                        }
                         navController.popBackStack()
                     },
                     onTakePhoto = {
