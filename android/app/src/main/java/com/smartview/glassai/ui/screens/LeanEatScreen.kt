@@ -35,6 +35,7 @@ import com.smartview.glassai.R
 import com.smartview.glassai.models.FoodEntry
 import com.smartview.glassai.models.FoodNutritionResponse
 import com.smartview.glassai.ui.components.*
+import com.smartview.glassai.models.ratingColor
 import com.smartview.glassai.ui.theme.*
 import com.smartview.glassai.viewmodels.LeanEatViewModel
 
@@ -721,23 +722,13 @@ private fun FoodItemRow(
             )
             Surface(
                 shape = RoundedCornerShape(AppRadius.small),
-                color = when (rating) {
-                    "优秀" -> HealthExcellent.copy(alpha = 0.15f)
-                    "良好" -> HealthGood.copy(alpha = 0.15f)
-                    "一般" -> HealthFair.copy(alpha = 0.15f)
-                    else -> HealthPoor.copy(alpha = 0.15f)
-                }
+                color = ratingColor(rating).copy(alpha = 0.15f)
             ) {
                 Text(
-                    text = rating,
+                    text = rating.replaceFirstChar { it.uppercase() },
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     style = MaterialTheme.typography.labelSmall,
-                    color = when (rating) {
-                        "优秀" -> HealthExcellent
-                        "良好" -> HealthGood
-                        "一般" -> HealthFair
-                        else -> HealthPoor
-                    },
+                    color = ratingColor(rating),
                     fontWeight = FontWeight.Medium
                 )
             }

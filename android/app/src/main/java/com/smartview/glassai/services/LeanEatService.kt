@@ -36,38 +36,41 @@ class LeanEatService(
         private const val MODEL = "qwen-vl-plus"
 
         private val NUTRITION_PROMPT = """
-请分析这张图片中的食物，并以JSON格式返回营养分析结果。
+Analyze the food in this image and return a nutrition analysis as JSON.
 
-请严格按照以下JSON格式返回（不要包含任何其他文字）：
+Return ONLY valid JSON, with NO other text before or after.
+Use English for ALL values (food names, portions, suggestions, health ratings).
+
+Required JSON format:
 {
   "foods": [
     {
-      "name": "食物名称",
-      "portion": "份量描述",
-      "calories": 热量数值(整数),
-      "protein": 蛋白质克数(小数),
-      "fat": 脂肪克数(小数),
-      "carbs": 碳水化合物克数(小数),
-      "fiber": 膳食纤维(小数或null),
-      "sugar": 糖克数(小数或null),
-      "healthRating": "优秀/良好/一般/较差"
+      "name": "Food name in English",
+      "portion": "Portion description in English",
+      "calories": integer,
+      "protein": grams as number,
+      "fat": grams as number,
+      "carbs": grams as number,
+      "fiber": grams as number or null,
+      "sugar": grams as number or null,
+      "healthRating": "excellent" | "good" | "fair" | "poor"
     }
   ],
-  "totalCalories": 总热量(整数),
-  "totalProtein": 总蛋白质(小数),
-  "totalFat": 总脂肪(小数),
-  "totalCarbs": 总碳水(小数),
-  "healthScore": 0-100的健康评分(整数),
-  "suggestions": ["建议1", "建议2", "建议3"]
+  "totalCalories": integer,
+  "totalProtein": number,
+  "totalFat": number,
+  "totalCarbs": number,
+  "healthScore": integer from 0 to 100,
+  "suggestions": ["Suggestion 1 in English", "Suggestion 2", "Suggestion 3"]
 }
 
-健康评分标准：
-- 80-100: 优秀（低脂、高蛋白、富含纤维）
-- 60-79: 良好（营养较均衡）
-- 40-59: 一般（可能高脂或高糖）
-- 0-39: 较差（高热量、低营养）
+Health score scale:
+- 80-100: excellent (low fat, high protein, high fiber)
+- 60-79: good (fairly balanced)
+- 40-59: fair (possibly high fat or sugar)
+- 0-39: poor (high calorie, low nutrition)
 
-请只返回JSON，不要有任何其他解释文字。
+Return JSON only. No explanations, no markdown.
 """.trimIndent()
     }
 
@@ -345,7 +348,7 @@ class LeanEatService(
                         carbs = food.get("carbs")?.asDouble ?: 0.0,
                         fiber = food.get("fiber")?.asDouble,
                         sugar = food.get("sugar")?.asDouble,
-                        healthRating = food.get("healthRating")?.asString ?: "良好"
+                        healthRating = food.get("healthRating")?.asString ?: "good"
                     )
                 )
             }

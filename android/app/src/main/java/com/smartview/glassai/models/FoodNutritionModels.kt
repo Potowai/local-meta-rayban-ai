@@ -25,10 +25,10 @@ data class FoodNutritionResponse(
 
     val healthScoreText: String
         get() = when {
-            healthScore >= 80 -> "优秀"
-            healthScore >= 60 -> "良好"
-            healthScore >= 40 -> "一般"
-            else -> "较差"
+            healthScore >= 80 -> "Excellent"
+            healthScore >= 60 -> "Good"
+            healthScore >= 40 -> "Fair"
+            else -> "Poor"
         }
 }
 
@@ -41,23 +41,49 @@ data class FoodItem(
     val carbs: Double,
     val fiber: Double? = null,
     val sugar: Double? = null,
-    val healthRating: String = "良好"
+    val healthRating: String = "good"
 ) {
+    val healthRatingLabel: String
+        get() = when (healthRating.lowercase()) {
+            "excellent" -> "Excellent"
+            "good" -> "Good"
+            "fair" -> "Fair"
+            "poor" -> "Poor"
+            "\u4f18\u79c0" -> "Excellent"
+            "\u826f\u597d" -> "Good"
+            "\u4e00\u822c" -> "Fair"
+            "\u8f83\u5dee" -> "Poor"
+            else -> "Good"
+        }
+
+    /** @deprecated kept for legacy callers only; use healthRatingLabel */
     val healthRatingEmoji: String
-        get() = when (healthRating) {
-            "优秀" -> "🟢"
-            "良好" -> "🟡"
-            "一般" -> "🟠"
-            "较差" -> "🔴"
-            else -> "🟡"
+        get() = when (healthRating.lowercase()) {
+            "excellent" -> "G"
+            "good" -> "g"
+            "fair" -> "f"
+            "poor" -> "p"
+            // Legacy Chinese values
+            "\u4f18\u79c0" -> "G"
+            "\u826f\u597d" -> "g"
+            "\u4e00\u822c" -> "f"
+            "\u8f83\u5dee" -> "p"
+            else -> "g"
         }
 
     val healthRatingColor: Color
-        get() = when (healthRating) {
-            "优秀" -> HealthExcellent
-            "良好" -> HealthGood
-            "一般" -> HealthFair
-            "较差" -> HealthPoor
-            else -> HealthGood
-        }
+        get() = ratingColor(healthRating)
+}
+
+fun ratingColor(rating: String): Color = when (rating.lowercase()) {
+    "excellent" -> HealthExcellent
+    "good" -> HealthGood
+    "fair" -> HealthFair
+    "poor" -> HealthPoor
+    // Legacy Chinese values
+    "\u4f18\u79c0" -> HealthExcellent
+    "\u826f\u597d" -> HealthGood
+    "\u4e00\u822c" -> HealthFair
+    "\u8f83\u5dee" -> HealthPoor
+    else -> HealthGood
 }
